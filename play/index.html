@@ -1323,6 +1323,29 @@
             height: 0;
         }
 
+        /* телефон: радио и видео — «шторка» снизу во всю ширину; кнопки управления на это
+           время прячутся, игра сверху остаётся видна */
+        body.touch #videoPanel.open,
+        body.touch #radioPanel.open {
+            top: auto !important;
+            left: 0 !important;
+            right: 0;
+            bottom: 0;
+            width: 100% !important;
+            max-height: 62vh !important;
+            border-radius: 16px 16px 0 0;
+            padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
+        }
+
+        body.touch.sheet-open #touchControls {
+            display: none;
+        }
+
+        body.touch #videoDetachBtn {
+            display: none;
+        }
+
         body.touch #videoPanel.open {
             position: fixed;
             top: calc(44px + env(safe-area-inset-top, 0px));
@@ -1348,31 +1371,98 @@
             align-self: center;
         }
 
+        /* меню на телефоне: компактная сетка в два столбца, отступ от кнопок Telegram сверху,
+           подсказки клавиш и «Управление» (клавиатура) не нужны */
+        body.touch .kbd-hint,
+        body.touch #controlsToggle,
+        body.touch #controls {
+            display: none !important;
+        }
+
+        body.touch.menu-open #sidebar {
+            gap: 10px;
+            padding-top: calc(10px + env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+            padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        }
+
+        body.touch.menu-open #menuClose {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        body.touch.menu-open #ui {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            padding: 8px;
+            margin-top: 0;
+        }
+
+        body.touch.menu-open #ui .stat {
+            margin: 0;
+            padding: 6px 8px;
+        }
+
+        body.touch.menu-open #ui .stat.wide {
+            grid-column: 1 / -1;
+        }
+
+        body.touch.menu-open #ui .stat-value {
+            font-size: 16px;
+        }
+
+        body.touch.menu-open #savePanel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            padding: 8px;
+        }
+
+        body.touch.menu-open #savePanel .btn {
+            margin: 0;
+            width: 100%;
+            padding: 10px 6px;
+        }
+
+        body.touch.menu-open #sideButtons {
+            margin-top: 0;
+        }
+
+        body.touch.menu-open #sideButtons .ach-btn {
+            grid-column: auto;
+        }
+
         body.touch #touchControls {
             display: block;
         }
 
         /* размер кнопки подстраивается под ширину экрана, чтобы две панели не наезжали */
+        /* У краёв экрана телефона — зона системных жестов («назад» слева и справа, «домой» снизу):
+           касание там телефон придерживает, пока решает, не жест ли это, — кнопка срабатывает
+           с задержкой. Поэтому кнопки отодвинуты от краёв на --edge. Размер кнопки подобран так,
+           чтобы обе панели с отступами помещались рядом: 6 кнопок + промежутки + края ≤ ширины. */
         body.touch {
-            --tb: clamp(42px, calc((100vw - 56px) / 6.4), 64px);
+            --edge: 28px;
+            --tb: clamp(40px, calc((100vw - 96px) / 6), 64px);
         }
 
         .touch-pad {
             position: fixed;
-            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
             z-index: 800;
             display: grid;
             gap: 8px;
         }
 
         #touchLeft {
-            left: calc(10px + env(safe-area-inset-left, 0px));
+            left: calc(var(--edge, 10px) + env(safe-area-inset-left, 0px));
             grid-template-columns: repeat(3, var(--tb));
             grid-template-rows: repeat(3, var(--tb));
         }
 
         #touchRight {
-            right: calc(10px + env(safe-area-inset-right, 0px));
+            right: calc(var(--edge, 10px) + env(safe-area-inset-right, 0px));
             grid-template-columns: repeat(3, var(--tb));
             grid-template-rows: repeat(3, var(--tb));
         }
@@ -1403,6 +1493,17 @@
             color: #000;
         }
 
+        /* настройки кнопок на телефоне: размер, прозрачность, сторона (для левшей) */
+        body.touch.tp-small { --tb: clamp(34px, calc((100vw - 96px) / 7.4), 52px); }
+        body.touch.tp-large { --tb: clamp(40px, calc((100vw - 96px) / 6), 76px); }   /* вертикально упирается в ширину; горизонтально — крупнее */
+        body.tp-faint .tbtn { background: rgba(30, 30, 30, 0.18); border-color: rgba(255, 165, 0, 0.35); color: rgba(255, 210, 127, 0.75); }
+        body.tp-solid .tbtn { background: rgba(30, 30, 30, 0.88); border-color: rgba(255, 165, 0, 0.85); }
+        body.tp-faint .tbtn.down, body.tp-faint .tbtn.on { background: rgba(255, 165, 0, 0.45); color: #000; }
+        body.tp-swap #touchLeft { left: auto; right: calc(var(--edge, 10px) + env(safe-area-inset-right, 0px)); }
+        body.tp-swap #touchRight { right: auto; left: calc(var(--edge, 10px) + env(safe-area-inset-left, 0px)); }
+        .touch-only { display: none; }
+        body.touch .touch-only { display: block; }
+
         #tUp    { grid-column: 2; grid-row: 1; }
         #tLeft  { grid-column: 1; grid-row: 2; }
         #tRight { grid-column: 3; grid-row: 2; }
@@ -1418,7 +1519,7 @@
     </style>
 </head>
 <body>
-    <h1>⛏️ Шахтёр 1899 <span style="font-size:14px;color:#888;font-weight:normal">v2.2.0</span></h1>
+    <h1>⛏️ Шахтёр 1899 <span style="font-size:14px;color:#888;font-weight:normal">v2.3.0</span></h1>
     <div id="layout">
     <!-- Слева: сохранения и радио (радио открывается клавишей M) -->
     <aside id="leftPanel">
@@ -1428,15 +1529,15 @@
         <button class="btn btn-secondary" onclick="exportSave()">⬇️ Экспорт</button>
         <button class="btn btn-secondary" onclick="importSave()">⬆️ Импорт</button>
         <button class="btn btn-danger" onclick="newGame()">🆕 Новая игра</button>
-        <button class="btn btn-secondary radio-open-btn" onclick="radioPanelToggle()">📻 Радио (M)</button>
-        <button class="btn btn-secondary" onclick="openVideoFromMenu()">📺 Видео (V)</button>
+        <button class="btn btn-secondary radio-open-btn" onclick="radioPanelToggle()">📻 Радио <span class="kbd-hint">(M)</span></button>
+        <button class="btn btn-secondary" onclick="openVideoFromMenu()">📺 Видео <span class="kbd-hint">(V)</span></button>
         <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки</button>
     </div>
 
     <!-- Маленький телевизор: открывается клавишей V (М) -->
     <div id="videoPanel">
         <div class="radio-head">
-            <span class="stat-label">Видео (V)</span>
+            <span class="stat-label">Видео <span class="kbd-hint">(V)</span></span>
             <span>
                 <button class="radio-x" id="videoDetachBtn" onclick="videoDetachToggle()" title="Вынести телевизор поверх игры и увеличить" aria-label="Вынести телевизор">⛶</button>
                 <button class="radio-x" onclick="videoPanelToggle(false)" aria-label="Скрыть телевизор">✕</button>
@@ -1468,7 +1569,7 @@
 
     <div id="radioPanel">
         <div class="radio-head">
-            <span class="stat-label">Радио (M)</span>
+            <span class="stat-label">Радио <span class="kbd-hint">(M)</span></span>
             <button class="radio-x" onclick="radioPanelToggle(false)" aria-label="Скрыть радио">✕</button>
         </div>
         <!-- эскиз «граммофон» (включается в настройках); пластинка крутится, пока играет -->
@@ -1553,7 +1654,7 @@
             <div class="stat-value" id="ropes">0</div>
         </div>
         <div class="stat">
-            <div class="stat-label">Лечение (H)</div>
+            <div class="stat-label">Лечение <span class="kbd-hint">(H)</span></div>
             <div class="stat-value" id="meds" style="font-size: 14px;">—</div>
         </div>
         <div class="stat wide">
@@ -1561,7 +1662,7 @@
             <div class="stat-value" id="goalStat" style="font-size: 13px;">⛏️ Свободная игра</div>
         </div>
         <div class="stat wide">
-            <div class="stat-label">Персонаж (P)</div>
+            <div class="stat-label">Персонаж <span class="kbd-hint">(P)</span></div>
             <div class="stat-value" id="heroStats" style="font-size: 13px;">Сила 1 · Выносливость 1</div>
         </div>
         <div class="stat wide">
@@ -1572,7 +1673,7 @@
 
     <!-- под статистикой: персонаж и подсказки по управлению -->
     <div id="sideButtons">
-        <button class="btn btn-secondary" onclick="openCharacter()">👷 Персонаж (P)</button>
+        <button class="btn btn-secondary" onclick="openCharacter()">👷 Персонаж <span class="kbd-hint">(P)</span></button>
         <button class="btn btn-secondary" id="controlsToggle" onclick="toggleControls()">🎮 Управление</button>
         <button class="btn btn-secondary ach-btn" onclick="openAchievements()">🏅 Достижения</button>
     </div>
@@ -1807,6 +1908,53 @@
                     <button class="btn btn-secondary" data-lang="ru" onclick="setLang('ru')">Русский</button>
                     <button class="btn btn-secondary" data-lang="en" onclick="setLang('en')">English</button>
                 </div>
+            </div>
+            <div class="setting touch-only">
+                <div class="setting-label">Кнопки на телефоне</div>
+                <div class="setting-options" id="tpSizeOptions">
+                    <button class="btn btn-secondary" data-tp-size="small" onclick="setTouchPad('size', 'small')">Мелкие</button>
+                    <button class="btn btn-secondary" data-tp-size="medium" onclick="setTouchPad('size', 'medium')">Средние</button>
+                    <button class="btn btn-secondary" data-tp-size="large" onclick="setTouchPad('size', 'large')">Крупные</button>
+                </div>
+                <div class="setting-options" id="tpOpacityOptions">
+                    <button class="btn btn-secondary" data-tp-opacity="faint" onclick="setTouchPad('opacity', 'faint')">Почти прозрачные</button>
+                    <button class="btn btn-secondary" data-tp-opacity="half" onclick="setTouchPad('opacity', 'half')">Полупрозрачные</button>
+                    <button class="btn btn-secondary" data-tp-opacity="solid" onclick="setTouchPad('opacity', 'solid')">Плотные</button>
+                </div>
+                <div class="setting-label" style="margin-top: 8px;">Сводка сверху</div>
+                <div class="setting-options two" id="hudSizeOptions">
+                    <button class="btn btn-secondary" data-hud="normal" onclick="setTouchPad('hud', 'normal')">Обычная</button>
+                    <button class="btn btn-secondary" data-hud="large" onclick="setTouchPad('hud', 'large')">Крупная</button>
+                </div>
+                <label class="setting-check">
+                    <input type="checkbox" id="optVibrate" onchange="setTouchPad('vibrate', this.checked)" checked>
+                    Вибрация при уроне, обвале и взрыве
+                </label>
+                <label class="setting-check">
+                    <input type="checkbox" id="optKeepAwake" onchange="setTouchPad('keepAwake', this.checked)" checked>
+                    Не гасить экран во время игры
+                </label>
+                <label class="setting-check">
+                    <input type="checkbox" id="tpSwap" onchange="setTouchPad('swap', this.checked)">
+                    Для левой руки: крестовина справа, кирка слева
+                </label>
+            </div>
+            <div class="setting">
+                <div class="setting-label">Звук</div>
+                <label class="setting-check"><input type="checkbox" id="optSound" onchange="setSound('sound', this.checked)" checked> Звуки игры</label>
+                <label class="setting-check"><input type="checkbox" id="optAmbience" onchange="setSound('ambience', this.checked)" checked> Фон шахты: гул и капли</label>
+                <label class="radio-volume">Громкость
+                    <input type="range" id="optVolume" min="0" max="100" step="1" value="60" oninput="setSound('volume', this.value)">
+                </label>
+            </div>
+            <div class="setting">
+                <div class="setting-label">Скорость</div>
+                <div class="setting-options" id="perfOptions">
+                    <button class="btn btn-secondary" data-perf="auto" onclick="setTouchPad('perf', 'auto')">Авто</button>
+                    <button class="btn btn-secondary" data-perf="fast" onclick="setTouchPad('perf', 'fast')">Быстро — для слабых устройств</button>
+                    <button class="btn btn-secondary" data-perf="quality" onclick="setTouchPad('perf', 'quality')">Красиво</button>
+                </div>
+                <div class="setting-note">«Быстро»: 30 кадров в секунду и обычная чёткость — меньше нагрузка и расход батареи. «Авто» включает его само на слабых телефонах.</div>
             </div>
             <div class="setting">
                 <div class="setting-label">Масштаб</div>
@@ -2386,7 +2534,34 @@
             "Вернуть телевизор на панель": "Put the TV back on the panel",
             "YouTube из файла на компьютере часто не показывает видео — на сайте игры работает": "YouTube often won’t play from a file on your computer — it works on the game’s website",
             "Пока пусто — добавь ссылку ниже": "Empty for now — add a link below",
-            "<button class=\"radio-pick\" onclick=\"videoSelect({0})\" title=\"{1}\">{2}{3}</button>\n                    <button class=\"radio-del\" onclick=\"videoRemove({4})\" aria-label=\"Удалить видео\">✕</button>": "<button class=\"radio-pick\" onclick=\"videoSelect({0})\" title=\"{1}\">{2}{3}</button>\n<button class=\"radio-del\" onclick=\"videoRemove({4})\" aria-label=\"Delete video\">✕</button>"
+            "<button class=\"radio-pick\" onclick=\"videoSelect({0})\" title=\"{1}\">{2}{3}</button>\n                    <button class=\"radio-del\" onclick=\"videoRemove({4})\" aria-label=\"Удалить видео\">✕</button>": "<button class=\"radio-pick\" onclick=\"videoSelect({0})\" title=\"{1}\">{2}{3}</button>\n<button class=\"radio-del\" onclick=\"videoRemove({4})\" aria-label=\"Delete video\">✕</button>",
+            "📻 Радио": "📻 Radio",
+            "📺 Видео": "📺 Video",
+            "Видео": "Video",
+            "Персонаж": "Character",
+            "(M)": "(M)",
+            "Кнопки на телефоне": "Phone buttons",
+            "Мелкие": "Small",
+            "Средние": "Medium",
+            "Крупные": "Large",
+            "Почти прозрачные": "Nearly transparent",
+            "Полупрозрачные": "Semi-transparent",
+            "Плотные": "Solid",
+            "Для левой руки: крестовина справа, кирка слева": "Left-handed: D-pad on the right, pickaxe on the left",
+            "Сводка сверху": "Top summary",
+            "Обычная": "Normal",
+            "Крупная": "Large",
+            "Вибрация при уроне, обвале и взрыве": "Vibrate on damage, cave-ins and explosions",
+            "Не гасить экран во время игры": "Keep the screen on while playing",
+            "Скорость": "Performance",
+            "Авто": "Auto",
+            "Быстро — для слабых устройств": "Fast — for weaker devices",
+            "Красиво": "Pretty",
+            "«Быстро»: 30 кадров в секунду и обычная чёткость — меньше нагрузка и расход батареи. «Авто» включает его само на слабых телефонах.": "“Fast”: 30 frames per second and normal sharpness — less load and battery drain. “Auto” turns it on by itself on weak phones.",
+            "Звук": "Sound",
+            "Звуки игры": "Game sounds",
+            "Фон шахты: гул и капли": "Mine ambience: rumble and drips",
+            "Громкость": "Volume"
             };
         let LANG = 'ru';
 
@@ -2462,7 +2637,7 @@
                 h = tilesY * TILE_SIZE;
             }
             const dpr = typeof devicePixelRatio === 'number' && devicePixelRatio > 0 ? devicePixelRatio : 1;
-            RENDER_SCALE = Math.min(2, Math.max(1, dpr));
+            RENDER_SCALE = typeof fastMode === 'function' && fastMode() ? 1 : Math.min(2, Math.max(1, dpr));
             const cw = Math.round(w * RENDER_SCALE), ch = Math.round(h * RENDER_SCALE);
             if (canvas.width !== cw || canvas.height !== ch) {
                 canvas.width = cw;
@@ -2475,7 +2650,7 @@
             if (typeof updateCamera === 'function' && world.length) updateCamera();
         }
         const SAVE_VERSION = 10;          // 2: размеры мира; 3: рюкзак и деньги; 4: кирка; 5: лопата; 6: лестницы и верёвки; 7: лампы, пояс; 8: характеристики; 9: цель и итоги; 10: режим (хардкор)
-        const GAME_VERSION = '2.2.0';
+        const GAME_VERSION = '2.3.0';
         const AUTOSAVE_INTERVAL = 30000; // 30 секунд
 
         // Физика игрока. Скорости — в блоках в секунду, ускорения — в блоках/с².
@@ -3106,7 +3281,7 @@
                 return false;
             }
             setBlock(cx, cy, BLOCK_TYPES.LADDER);
-            ladders--;
+            ladders--; sfx('place');
             updateUI();
             return true;
         }
@@ -3125,7 +3300,7 @@
                 setBlock(fx, fy + n, BLOCK_TYPES.ROPE);
                 n++;
             }
-            ropes--;
+            ropes--; sfx('rope');
             showNotification(L`🧗 Верёвка спущена на ${n} м`);
             updateUI();
             return n;
@@ -3157,7 +3332,7 @@
                 return 0;
             }
             for (const cx of cells) setBlock(cx, row, BLOCK_TYPES.BRIDGE);
-            ropes--;
+            ropes--; sfx('rope');
             showNotification(L`🧗 Переправа натянута: ${cells.length} м`);
             updateUI();
             return cells.length;
@@ -3273,6 +3448,7 @@
 
         function rideCage() {
             trip.gear = true;
+            sfx('cage');
             const depth = currentDepth();
             if (depth < CAGE_MIN_DEPTH) return false;
             const cost = cageCost(depth);
@@ -3298,7 +3474,7 @@
 
         function buyLadders() {
             if (stats.money < LADDER_PACK.price) { showNotification(L`💰 Не хватает ${LADDER_PACK.price - stats.money} ¤`); return false; }
-            stats.money -= LADDER_PACK.price;
+            stats.money -= LADDER_PACK.price; sfx('buy');
             ladders = Math.min(MAX_GEAR, ladders + LADDER_PACK.count);
             showNotification(L`🧗 Куплено ${LADDER_PACK.count} лестниц`);
             updateUI(); renderShopList();
@@ -3315,6 +3491,7 @@
             if (lampLit) { showNotification(L('🔥 Лампа и так горит')); return false; }
             if (matches <= 0) { showNotification(L('🔥 Спичек нет — купи коробок в лавке')); return false; }
             matches--;
+            sfx('match');
             const px = player.x + PLAYER_W / 2, py = player.y + 0.5;
             const cloud = gasClouds.find(g => Math.hypot(px - g.x, py - g.y) < g.radius);
             if (cloud) {
@@ -3331,7 +3508,7 @@
 
         function buyMatches() {
             if (stats.money < MATCHES_PACK.price) { showNotification(L`💰 Не хватает ${MATCHES_PACK.price - stats.money} ¤`); return false; }
-            stats.money -= MATCHES_PACK.price;
+            stats.money -= MATCHES_PACK.price; sfx('buy');
             matches = Math.min(MAX_GEAR, matches + MATCHES_PACK.count);
             showNotification(L`🔥 Куплен коробок спичек: ${MATCHES_PACK.count} шт.`);
             updateUI(); renderShopList();
@@ -3340,7 +3517,7 @@
 
         function buyRope() {
             if (stats.money < ROPE_PRICE) { showNotification(L`💰 Не хватает ${ROPE_PRICE - stats.money} ¤`); return false; }
-            stats.money -= ROPE_PRICE;
+            stats.money -= ROPE_PRICE; sfx('buy');
             ropes = Math.min(MAX_GEAR, ropes + 1);
             showNotification(L('🧗 Куплена верёвка'));
             updateUI(); renderShopList();
@@ -3357,6 +3534,7 @@
             if (fallTop !== null) {
                 const drop = player.y - fallTop;
                 fallTop = null;
+                if (drop > 1.5) sfx('land');
                 if (drop > SAFE_FALL) {
                     if (lampShines() && LAMPS[lampTier].open) {
                         lampLit = false;
@@ -3557,6 +3735,7 @@
 
         function damage(amount, reason) {
             if (debug.on && debug.fly) return;     // в полёте отладки — бессмертие
+            if (amount >= 3) { buzz(amount >= 20 ? 'heavy' : 'light'); sfx('hurt'); }   // жар и газ по чуть-чуть — без вибрации и звука
             health -= amount;
             lastDamageAt = hazardClock;
             damageFlash = Math.min(1, damageFlash + amount / 20 + 0.1);
@@ -3566,6 +3745,7 @@
 
         function die(reason) {
             run.deaths++;
+            sfx('death');
             trip.maxDepth = 0; trip.gear = true;   // смерть — не «выбрался сам»
             run.reachedBottom = false;          // «вернуться живым»: дно засчитывается заново
             if (mode.hardcore && mode.variant === 'oneLife') { hardcoreGameOver(reason); return; }
@@ -3636,6 +3816,8 @@
             if (hazardRandom() >= CAVEIN_CHANCE) return;
             crumbling.push({ x, y, timer: CAVEIN_DELAY });
             showNotification(L('⚠️ Потолок трещит!'));
+            buzz('warn');
+            sfx('crack');
         }
 
         // Выпустить газ из кармана, к которому относится клетка (x, y)
@@ -3663,6 +3845,7 @@
                 return cells.length;
             }
             gasClouds.push({ x: mx, y: my, radius, age: 0 });
+            sfx('gas');
             showNotification(L('☣️ Рудничный газ! Отойди подальше'));
             return cells.length;
         }
@@ -3677,6 +3860,7 @@
                     }
                 }
             lampLit = false;
+            sfx('boom');
             damageFlash = 1;
             showNotification(L('💥 Открытая лампа подожгла рудничный газ! Лампа погасла'));
             const deathsBefore = run.deaths;
@@ -3711,6 +3895,7 @@
                     if (type === BLOCK_TYPES.STONE || type === BLOCK_TYPES.CLAY) {
                         setBlock(c.x, c.y, BLOCK_TYPES.AIR);
                         fallingBlocks.push({ x: c.x, y: c.y, vy: 0, type });
+                        sfx('cavein');
                         maybeCrumble(c.x, c.y - 1);      // обвал может пойти дальше вверх
                     }
                 }
@@ -3761,7 +3946,7 @@
             const b = BELTS[tier];
             if (!b || tier <= beltTier) return false;
             if (stats.money < b.price) { showNotification(L`💰 Не хватает ${b.price - stats.money} ¤`); return false; }
-            stats.money -= b.price;
+            stats.money -= b.price; sfx('buy');
             beltTier = tier;
             showNotification(L`🩹 ${b.name}: ${b.bandages} бинтов и ${b.medkits} аптечки`);
             updateUI(); renderShopList();
@@ -3786,7 +3971,7 @@
             const amount = item === 'medkit' ? MEDKIT.heal : BANDAGE.heal;
             if (item === 'medkit') medkits--; else bandages--;
             const before = health;
-            health = Math.min(maxHealth(), health + amount);
+            health = Math.min(maxHealth(), health + amount); sfx('heal');
             lastHealAt = hazardClock;
             showNotification(L`${item === 'medkit' ? L('✚ Аптечка') : L('🩹 Бинт')}: +${Math.round(health - before)} здоровья`);
             updateUI();
@@ -3801,7 +3986,7 @@
                 return false;
             }
             if (stats.money < m.price) { showNotification(L`💰 Не хватает ${m.price - stats.money} ¤`); return false; }
-            stats.money -= m.price;
+            stats.money -= m.price; sfx('buy');
             if (kind === 'medkit') medkits = Math.min(MAX_MEDS, medkits + 1);
             else bandages = Math.min(MAX_MEDS, bandages + 1);
             updateUI(); renderShopList();
@@ -4061,6 +4246,7 @@
             if (c.bite > 0 || lampScares(c)) return;
             if (!boxesOverlap(creatureBox(c), playerBox())) return;
             c.bite = BITE_COOLDOWN / (mode.fierce ? HC_FIERCE_MULT : 1);
+            sfx(c.type === 'rat' ? 'rat' : c.type === 'salamander' ? 'spit' : c.type);
             if (c.type === 'rat') {
                 stealOre(c);
             } else {
@@ -4209,6 +4395,7 @@
         function killCreature(c) {
             c.hp = 0;
             run.kills++;
+            sfx('squash');
             if (c.type === 'rat') countUp('rat');
             if (c.type === 'spider') countUp('spider');
             if (c.type === 'salamander') unlock('salamander');
@@ -4232,6 +4419,7 @@
             for (let dy = -CANARY_RADIUS; dy <= CANARY_RADIUS && !canaryAlarm; dy++)
                 for (let dx = -CANARY_RADIUS; dx <= CANARY_RADIUS; dx++)
                     if (getBlock(cx + dx, cy + dy) === BLOCK_TYPES.GAS) { canaryAlarm = true; break; }
+            if (canaryAlarm) sfx('chirp');
             if (canaryAlarm && !was) showNotification(L('🐤 Канарейка беспокоится — где-то рядом газ!'));
             // в облаке газа канарейка гибнет — настоящая шахтёрская примета
             for (const g of gasClouds) {
@@ -4289,7 +4477,7 @@
             const l = LAMPS[tier];
             if (!l || tier <= lampTier) return false;
             if (stats.money < l.price) { showNotification(L`💰 Не хватает ${l.price - stats.money} ¤`); return false; }
-            stats.money -= l.price;
+            stats.money -= l.price; sfx('buy');
             lampTier = tier;
             lampLit = true;
             showNotification(tier === 2 ? L('🔦 Куплена лампа Дэви: не гаснет и не поджигает газ') : L('🔦 Куплена открытая лампа: береги её от падений и газа'));
@@ -4300,7 +4488,7 @@
         function buyCanary() {
             if (hasCanary) return false;
             if (stats.money < CANARY_PRICE) { showNotification(L`💰 Не хватает ${CANARY_PRICE - stats.money} ¤`); return false; }
-            stats.money -= CANARY_PRICE;
+            stats.money -= CANARY_PRICE; sfx('buy');
             hasCanary = true;
             showNotification(L('🐤 Куплена канарейка: она забеспокоится рядом с газом'));
             updateUI(); renderShopList();
@@ -4478,7 +4666,7 @@
             const b = BACKPACKS[tier];
             if (!b || tier <= backpackTier) return false;
             if (stats.money < b.price) { showNotification(L`💰 Не хватает ${b.price - stats.money} ¤`); return false; }
-            stats.money -= b.price;
+            stats.money -= b.price; sfx('buy');
             backpackTier = tier;
             showNotification(L`🎒 Куплен ${b.name.toLowerCase()}: ${b.capacity} мест`);
             updateUI(); renderShopList();
@@ -4633,6 +4821,7 @@
             const a = ACHIEVEMENTS.find(x => x.id === id);
             if (!a || ach.got[id]) return false;
             ach.got[id] = Date.now();
+            sfx('achievement');
             saveAchievements();
             showNotification(L`🏅 Достижение: ${a.name}`);
             renderAchievements();
@@ -4797,6 +4986,7 @@
         // Финальный экран
         function showFinal(title, reason) {
             gameState.paused = true;
+            if (!gameOver) sfx('fanfare');
             document.getElementById('finalTitle').textContent = title || L('🏆 Цель выполнена!');
             const cont = document.getElementById('finalContinue');
             if (cont && cont.style) cont.style.display = gameOver ? 'none' : '';
@@ -4888,7 +5078,7 @@
             if (have < need) { showNotification(L`${info.emoji} Мало очков: ${Math.floor(have)} из ${need}`); return false; }
             const price = tonicPrice(stat);
             if (stats.money < price) { showNotification(L`💰 Не хватает ${price - stats.money} ¤`); return false; }
-            stats.money -= price;
+            stats.money -= price; sfx('buy');
             hero[stat + 'Pts'] = Math.round((have - need) * 10) / 10;
             hero[stat]++;
             if (stat === 'end') health = Math.min(maxHealth(), health + 10);
@@ -4954,6 +5144,7 @@
             const earned = backpackValue();
             const count = backpackCount();
             if (count === 0) return 0;
+            sfx('coins');
             addPoints('str', backpackWeight());
             run.earned += earned;
             run.platinumSold += backpack.platinum || 0;
@@ -4986,7 +5177,7 @@
                 showNotification(L`💰 Не хватает ${p.price - stats.money} ¤`);
                 return false;
             }
-            stats.money -= p.price;
+            stats.money -= p.price; sfx('buy');
             pickaxeTier = tier;
             if (tier === 3) unlock('diamondPick');
             resetDig();
@@ -5004,7 +5195,7 @@
                 showNotification(L`💰 Не хватает ${sh.price - stats.money} ¤`);
                 return false;
             }
-            stats.money -= sh.price;
+            stats.money -= sh.price; sfx('buy');
             shovelTier = tier;
             resetDig();
             showNotification(L`🛠️ Куплена ${sh.name.toLowerCase()}`);
@@ -5310,6 +5501,7 @@
                 return;
             }
             digState.progress += dt / digTime(block, t.x, t.y);
+            sfx('hit', SOFT[block] !== undefined ? 'soft' : (ORES[block] ? 'ore' : 'hard'));
             if (digState.progress >= 1) {
                 breakBlock(t.x, t.y);
                 resetDig();
@@ -5344,10 +5536,11 @@
             if (block === BLOCK_TYPES.BRIDGE) { takeBridge(targetX, targetY); updateUI(); return; }
             if (block === BLOCK_TYPES.WEB) { setBlock(targetX, targetY, BLOCK_TYPES.AIR); return; }
             addPoints('end', SOFT[block] !== undefined ? 0.5 : 1);
+            sfx('break');
 
             if (block !== BLOCK_TYPES.AIR && block !== BLOCK_TYPES.BEDROCK) {
                 const result = addToBackpack(block);
-            if (result === 'added' || result === 'swapped') onOreMined(block);
+            if (result === 'added' || result === 'swapped') { onOreMined(block); sfx('ore'); }
                 if (result === 'added') {
                     addScore(ORES[block].score);
                     if (backpackCount() === backpackCapacity()) {
@@ -5855,29 +6048,61 @@
         }
 
         // Краткая сводка поверх игры на телефоне (полная панель — по кнопке «☰»)
+        // Сводка сверху на телефоне: четыре «плашки» с иконками — здоровье (с полоской),
+        // глубина, рюкзак (с полоской заполнения), монеты. Размер — в настройках.
         function renderTouchHud() {
-            const depth = Math.floor(Math.max(0, player.y - DEPTH_ORIGIN));
-            const text = L`❤ ${Math.ceil(health)}  ${depth} м  🎒 ${backpackCount()}/${backpackCapacity()}  ${stats.money}   `;
-            // холст на телефоне ужат — шрифт увеличиваем, чтобы на экране было ~13 px
             const scale = canvas.clientWidth ? LW / canvas.clientWidth : 1;
-            const size = Math.round(13 * scale);
+            let px = (settings.hudSize === 'large' ? 19 : 15);           // размер шрифта на экране
+            const depth = Math.floor(Math.max(0, player.y - DEPTH_ORIGIN));
+            const hpMax = maxHealth(), hp = Math.max(0, Math.ceil(health));
+            const bag = backpackCount(), cap = backpackCapacity();
+            const chips = [
+                { icon: '❤', text: String(hp), bar: hp / hpMax, barColor: hp <= hpMax * 0.3 ? '#ff5a5a' : hp <= hpMax * 0.6 ? '#ffd23c' : '#5ad25a', warn: hp <= hpMax * 0.3 },
+                { icon: '⛏', text: L`${depth} м` },
+                { icon: '🎒', text: `${bag}/${cap}`, bar: bag / cap, barColor: bag >= cap ? '#ff5a5a' : '#ffa500', warn: bag >= cap },
+                { icon: null, coin: true, text: String(stats.money) }
+            ];
             ctx.save();
-            ctx.font = `bold ${size}px "Courier New", monospace`;
-            const w = ctx.measureText ? ctx.measureText(text).width : 300;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-            ctx.fillRect(LW / 2 - w / 2 - 8, 4, w + 16, size * 1.6);
-            ctx.fillStyle = health <= 30 ? '#FF6B6B' : '#FFD27F';
-            ctx.textAlign = 'center';
-            ctx.fillText(text, LW / 2, 4 + size * 1.15);
-            // монета после суммы денег
-            const cx = LW / 2 + w / 2 - size * 0.55, cy = 4 + size * 0.8, r = size * 0.42;
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            ctx.fillStyle = '#F6C945';
-            ctx.fill();
-            ctx.lineWidth = Math.max(1, size * 0.08);
-            ctx.strokeStyle = '#8A5F0C';
-            ctx.stroke();
+            let size, pad, gap, widths, total;
+            const measure = () => {
+                size = Math.round(px * scale); pad = size * 0.45; gap = size * 0.35;
+                ctx.font = `bold ${size}px "Courier New", monospace`;
+                widths = chips.map(c => {
+                    const tw = ctx.measureText ? ctx.measureText(c.text).width : c.text.length * size * 0.6;
+                    return pad * 2 + size * 1.15 + tw;
+                });
+                total = widths.reduce((a, b) => a + b, 0) + gap * (chips.length - 1);
+            };
+            measure();
+            while (total > LW - 8 && px > 10) { px -= 1; measure(); }    // узкий экран — чуть мельче
+            const h = size * 1.75, top = 4;
+            let x = LW / 2 - total / 2;
+            const blink = Math.floor((typeof hazardClock === 'number' ? hazardClock : 0) * 3) & 1;
+            chips.forEach((c, k) => {
+                const w = widths[k];
+                ctx.fillStyle = c.warn && blink ? 'rgba(120, 20, 20, 0.75)' : 'rgba(0, 0, 0, 0.6)';
+                if (ctx.beginPath && ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, top, w, h, h * 0.3); ctx.fill(); }
+                else ctx.fillRect(x, top, w, h);
+                const ix = x + pad + size * 0.5, iy = top + h * 0.5 - (c.bar !== undefined ? size * 0.12 : 0);
+                if (c.coin) {
+                    ctx.beginPath(); ctx.arc(ix, iy, size * 0.42, 0, Math.PI * 2);
+                    ctx.fillStyle = '#F6C945'; ctx.fill();
+                    ctx.lineWidth = Math.max(1, size * 0.08); ctx.strokeStyle = '#8A5F0C'; ctx.stroke();
+                } else {
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = c.icon === '❤' ? '#ff5a5a' : '#FFD27F';
+                    ctx.fillText(c.icon, ix, iy);
+                }
+                ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = c.warn ? '#FF8A8A' : '#FFD27F';
+                ctx.fillText(c.text, x + pad + size * 1.15, iy);
+                if (c.bar !== undefined) {
+                    const bx = x + pad * 0.7, bw = w - pad * 1.4, by = top + h - size * 0.32, bh = Math.max(2, size * 0.16);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.fillRect(bx, by, bw, bh);
+                    ctx.fillStyle = c.barColor; ctx.fillRect(bx, by, bw * Math.min(1, Math.max(0, c.bar)), bh);
+                }
+                x += w + gap;
+            });
             ctx.restore();
         }
 
@@ -6627,7 +6852,9 @@
         const SETTINGS_KEY = 'miner_settings';
         const NOTIFY_POSITIONS = ['top-right', 'top-left', 'top-center', 'bottom-right', 'bottom-left', 'bottom-center'];
         // вид радио и видео по умолчанию простой: граммофон и телевизор игрок включает сам
-        const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null };
+        const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null,
+            tpSize: 'medium', tpOpacity: 'half', tpSwap: false, hudSize: 'normal',
+            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6 };
         const RADIO_SKINS = ['plain', 'gramophone'];
         const VIDEO_SKINS = ['plain', 'tv'];
 
@@ -6638,6 +6865,16 @@
                 settings.swap = st.swap === true;
                 settings.showControls = st.showControls === true;
                 if (ZOOM_OPTIONS.includes(st.zoom)) settings.zoom = st.zoom;
+                if (['small', 'medium', 'large'].includes(st.tpSize)) settings.tpSize = st.tpSize;
+                if (['faint', 'half', 'solid'].includes(st.tpOpacity)) settings.tpOpacity = st.tpOpacity;
+                settings.tpSwap = st.tpSwap === true;
+                if (st.hudSize === 'large' || st.hudSize === 'normal') settings.hudSize = st.hudSize;
+                if (typeof st.vibrate === 'boolean') settings.vibrate = st.vibrate;
+                if (typeof st.keepAwake === 'boolean') settings.keepAwake = st.keepAwake;
+                if (['auto', 'fast', 'quality'].includes(st.perf)) settings.perf = st.perf;
+                if (typeof st.sound === 'boolean') settings.sound = st.sound;
+                if (typeof st.ambience === 'boolean') settings.ambience = st.ambience;
+                if (Number.isFinite(st.volume) && st.volume >= 0 && st.volume <= 1) settings.volume = st.volume;
                 if (st.lang === 'ru' || st.lang === 'en') settings.lang = st.lang;
                 // ссылка с сайта: play/?lang=en — язык страницы сайта становится языком игры
                 const q = typeof location !== 'undefined' ? String(location.search || '').match(/[?&]lang=(ru|en)\b/) : null;
@@ -6655,6 +6892,11 @@
             if (document.body && document.body.classList) {
                 document.body.classList.toggle('swap-panels', settings.swap);
                 document.body.classList.toggle('show-controls', settings.showControls);
+                document.body.classList.toggle('tp-small', settings.tpSize === 'small');
+                document.body.classList.toggle('tp-large', settings.tpSize === 'large');
+                document.body.classList.toggle('tp-faint', settings.tpOpacity === 'faint');
+                document.body.classList.toggle('tp-solid', settings.tpOpacity === 'solid');
+                document.body.classList.toggle('tp-swap', settings.tpSwap);
                 document.body.classList.toggle('radio-gramophone', settings.radioSkin === 'gramophone');
                 document.body.classList.toggle('video-plain', settings.videoSkin === 'plain');
             }
@@ -6674,10 +6916,250 @@
             }
             const lang = settings.lang || detectLang();
             if (lang !== LANG) { LANG = lang; translateDom(); if (typeof updateUI === 'function' && typeof player !== 'undefined') try { updateUI(); } catch (e) { /* ещё не готово */ } }
+            if (document.querySelectorAll) {
+                document.querySelectorAll('#tpSizeOptions [data-tp-size]').forEach(b => b.classList.toggle('chosen', b.dataset.tpSize === settings.tpSize));
+                document.querySelectorAll('#tpOpacityOptions [data-tp-opacity]').forEach(b => b.classList.toggle('chosen', b.dataset.tpOpacity === settings.tpOpacity));
+                document.querySelectorAll('#hudSizeOptions [data-hud]').forEach(b => b.classList.toggle('chosen', b.dataset.hud === settings.hudSize));
+                document.querySelectorAll('#perfOptions [data-perf]').forEach(b => b.classList.toggle('chosen', b.dataset.perf === settings.perf));
+            }
+            const tps = document.getElementById('tpSwap');
+            if (tps) tps.checked = settings.tpSwap;
+            const vb = document.getElementById('optVibrate'); if (vb) vb.checked = settings.vibrate;
+            const so = document.getElementById('optSound'); if (so) so.checked = settings.sound;
+            const am = document.getElementById('optAmbience'); if (am) am.checked = settings.ambience;
+            const vo = document.getElementById('optVolume'); if (vo) vo.value = Math.round(settings.volume * 100);
+            const ka = document.getElementById('optKeepAwake'); if (ka) ka.checked = settings.keepAwake;
             if (document.querySelectorAll) document.querySelectorAll('#langOptions [data-lang]').forEach(b => b.classList.toggle('chosen', b.dataset.lang === LANG));
             const z = settings.zoom / TILE_SIZE;
             if (z !== ZOOM) { ZOOM = z; if (typeof fitCanvasForDevice === 'function') fitCanvasForDevice(); }
             restackNotifications();
+        }
+
+        // ============ ЗВУК ============
+        // Все звуки создаются кодом (Web Audio) — без файлов: шум через фильтры и тоны.
+        // Браузеры разрешают звук только после касания или клавиши — звук включается на первом
+        // нажатии. Фон шахты свой в каждом пласте: гул и капли, на Огненном дне — треск.
+        const SFX = { ctx: null, master: null, amb: null, ambNodes: null, noise: null, ambBiome: -1, nextDrip: 0, last: {} };
+
+        function sfxReady() {
+            if (SFX.ctx) return SFX.ctx.state !== 'closed';
+            const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+            if (!AC) return false;
+            try {
+                SFX.ctx = new AC();
+                SFX.master = SFX.ctx.createGain();
+                SFX.master.connect(SFX.ctx.destination);
+                SFX.amb = SFX.ctx.createGain();
+                SFX.amb.gain.value = 0;
+                SFX.amb.connect(SFX.master);
+                const len = SFX.ctx.sampleRate;                 // секунда белого шума — на все звуки
+                SFX.noise = SFX.ctx.createBuffer(1, len, len);
+                const d = SFX.noise.getChannelData(0);
+                for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                sfxVolume();
+                return true;
+            } catch (e) { SFX.ctx = null; return false; }
+        }
+
+        function sfxVolume() {
+            if (!SFX.master) return;
+            SFX.master.gain.value = settings.sound ? settings.volume : 0;
+        }
+
+        // Первое касание или клавиша — разбудить звук (политика автозапуска браузеров)
+        function sfxUnlock() {
+            if (!settings.sound || !sfxReady()) return;
+            if (SFX.ctx.state === 'suspended' && SFX.ctx.resume) SFX.ctx.resume().catch(() => {});
+        }
+
+        function sfxNoise({ dur = 0.15, type = 'lowpass', freq = 1000, q = 1, gain = 0.3, attack = 0.002, at = 0, out } = {}) {
+            const c = SFX.ctx, t = c.currentTime + at;
+            const src = c.createBufferSource(); src.buffer = SFX.noise;
+            const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+            const g = c.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(gain, t + attack);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            src.connect(f); f.connect(g); g.connect(out || SFX.master);
+            src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+        }
+
+        function sfxTone({ freq = 440, to, type = 'sine', dur = 0.12, gain = 0.2, at = 0, out } = {}) {
+            const c = SFX.ctx, t = c.currentTime + at;
+            const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
+            if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+            const g = c.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(gain, t + 0.005);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g); g.connect(out || SFX.master);
+            o.start(t); o.stop(t + dur + 0.05);
+        }
+
+        // Звук события. Повторы одного звука чаще minGap секунд не играются.
+        const SFX_GAP = { step: 0.22, climb: 0.25, hurt: 0.25, hit: 0.2, crack: 0.3, cavein: 0.4, chirp: 0.6, heat: 0.5 };
+        function sfx(name, arg) {
+            if (!settings.sound || !SFX.ctx || SFX.ctx.state !== 'running') return false;
+            const now = SFX.ctx.currentTime, gap = SFX_GAP[name] || 0.03;
+            if (SFX.last[name] !== undefined && now - SFX.last[name] < gap) return false;
+            SFX.last[name] = now;
+            const r = (a, b) => a + Math.random() * (b - a);
+            switch (name) {
+                case 'hit':        // удар инструментом: мягкая порода, камень, руда
+                    if (arg === 'soft') sfxNoise({ dur: 0.09, freq: r(500, 700), gain: 0.25 });
+                    else { sfxNoise({ dur: 0.07, type: 'bandpass', freq: r(1600, 2200), q: 3, gain: 0.35 }); sfxTone({ freq: r(180, 220), to: 90, dur: 0.06, gain: 0.15 }); }
+                    if (arg === 'ore') sfxTone({ freq: r(1700, 1900), to: 1500, type: 'triangle', dur: 0.12, gain: 0.08 });
+                    return true;
+                case 'break':      sfxNoise({ dur: 0.18, freq: 900, gain: 0.35 }); sfxTone({ freq: 140, to: 60, dur: 0.15, gain: 0.25 }); return true;
+                case 'ore':        sfxTone({ freq: 660, dur: 0.07, gain: 0.12, type: 'triangle' }); sfxTone({ freq: 990, dur: 0.1, gain: 0.12, type: 'triangle', at: 0.07 }); return true;
+                case 'coins':      [1320, 1760, 2093, 1760, 2349].forEach((f, i) => sfxTone({ freq: f, dur: 0.12, gain: 0.1, type: 'triangle', at: i * 0.06 })); return true;
+                case 'buy':        sfxTone({ freq: 523, dur: 0.09, gain: 0.12, type: 'square' }); sfxTone({ freq: 784, dur: 0.14, gain: 0.12, type: 'square', at: 0.08 }); return true;
+                case 'deny':       sfxTone({ freq: 220, to: 180, dur: 0.16, gain: 0.12, type: 'square' }); return true;
+                case 'step':       sfxNoise({ dur: 0.05, freq: r(300, 450), gain: 0.1 }); return true;
+                case 'climb':      sfxTone({ freq: r(260, 320), to: 200, dur: 0.05, gain: 0.08, type: 'triangle' }); return true;
+                case 'land':       sfxNoise({ dur: 0.12, freq: 350, gain: 0.25 }); sfxTone({ freq: 110, to: 55, dur: 0.12, gain: 0.25 }); return true;
+                case 'place':      sfxTone({ freq: 330, to: 240, dur: 0.07, gain: 0.15, type: 'triangle' }); sfxNoise({ dur: 0.05, freq: 1200, gain: 0.1 }); return true;
+                case 'rope':       sfxNoise({ dur: 0.35, type: 'bandpass', freq: 2500, q: 0.7, gain: 0.12, attack: 0.05 }); return true;
+                case 'crack':      for (let i = 0; i < 4; i++) sfxNoise({ dur: 0.03, type: 'highpass', freq: 2500, gain: 0.25, at: r(0, 0.35) }); return true;
+                case 'cavein':     sfxNoise({ dur: 1.1, freq: 250, gain: 0.45, attack: 0.03 }); sfxTone({ freq: 70, to: 35, dur: 0.9, gain: 0.3 }); return true;
+                case 'gas':        sfxNoise({ dur: 1.2, type: 'highpass', freq: 3000, gain: 0.18, attack: 0.08 }); return true;
+                case 'boom':       sfxNoise({ dur: 1.4, freq: 400, gain: 0.7, attack: 0.005 }); sfxTone({ freq: 90, to: 30, dur: 1.0, gain: 0.5 }); return true;
+                case 'match':      sfxNoise({ dur: 0.25, type: 'highpass', freq: 2000, gain: 0.2, attack: 0.01 }); sfxNoise({ dur: 0.5, type: 'bandpass', freq: 600, q: 0.8, gain: 0.08, at: 0.12, attack: 0.05 }); return true;
+                case 'hurt':       sfxTone({ freq: 240, to: 110, dur: 0.16, gain: 0.18, type: 'square' }); return true;
+                case 'death':      [392, 330, 262, 196].forEach((f, i) => sfxTone({ freq: f, dur: 0.22, gain: 0.15, type: 'triangle', at: i * 0.18 })); return true;
+                case 'heal':       sfxTone({ freq: 523, to: 784, dur: 0.25, gain: 0.12 }); return true;
+                case 'rat':        sfxTone({ freq: 2400, to: 3000, dur: 0.06, gain: 0.08 }); sfxTone({ freq: 2600, to: 3200, dur: 0.06, gain: 0.08, at: 0.09 }); return true;
+                case 'bat':        sfxTone({ freq: 3200, to: 2400, dur: 0.08, gain: 0.07, type: 'sawtooth' }); return true;
+                case 'spider':     sfxNoise({ dur: 0.18, type: 'highpass', freq: 4000, gain: 0.12 }); return true;
+                case 'spit':       sfxNoise({ dur: 0.25, type: 'bandpass', freq: 900, q: 1.5, gain: 0.2 }); sfxTone({ freq: 400, to: 150, dur: 0.2, gain: 0.1, type: 'sawtooth' }); return true;
+                case 'squash':     sfxTone({ freq: 300, to: 80, dur: 0.12, gain: 0.15, type: 'square' }); return true;
+                case 'chirp':      [2600, 3100, 2600].forEach((f, i) => sfxTone({ freq: f, to: f * 1.15, dur: 0.05, gain: 0.07, at: i * 0.08 })); return true;
+                case 'cage':       for (let i = 0; i < 5; i++) sfxTone({ freq: r(700, 900), dur: 0.05, gain: 0.07, type: 'square', at: i * 0.07 }); return true;
+                case 'achievement':[523, 659, 784, 1047].forEach((f, i) => sfxTone({ freq: f, dur: 0.18, gain: 0.12, type: 'triangle', at: i * 0.1 })); return true;
+                case 'fanfare':    [523, 659, 784, 1047, 784, 1047].forEach((f, i) => sfxTone({ freq: f, dur: 0.25, gain: 0.13, type: 'square', at: i * 0.14 })); return true;
+            }
+            return false;
+        }
+
+        // Фон шахты: гул (шум через фильтр) — свой у каждого пласта; капли — случайно
+        const AMBIENCE = [
+            { freq: 180, q: 0.6, gain: 0.05, drip: 6 },     // Песчаный пласт — тихий шорох
+            { freq: 120, q: 0.8, gain: 0.06, drip: 2.5 },   // Глиняные штольни — сыро, капли чаще
+            { freq: 80,  q: 1.2, gain: 0.07, drip: 4 },     // Гранитные недра — глухой гул
+            { freq: 60,  q: 0.9, gain: 0.09, drip: 0, crackle: true }   // Огненное дно — рокот и треск
+        ];
+        function updateAmbience(dt) {
+            if (!SFX.ctx || SFX.ctx.state !== 'running') return;
+            const underground = settings.sound && settings.ambience && !gameState.paused && player.y >= SURFACE_Y + 2;
+            const target = underground ? 1 : 0;
+            const t = SFX.ctx.currentTime;
+            SFX.amb.gain.setTargetAtTime(target, t, 0.6);
+            if (!underground) return;
+            const bi = biomeIndexAt(Math.max(0, player.y - DEPTH_ORIGIN));
+            const a = AMBIENCE[bi] || AMBIENCE[0];
+            if (!SFX.ambNodes) {
+                const src = SFX.ctx.createBufferSource(); src.buffer = SFX.noise; src.loop = true;
+                const f = SFX.ctx.createBiquadFilter(); f.type = 'lowpass';
+                const g = SFX.ctx.createGain(); g.gain.value = 0;
+                src.connect(f); f.connect(g); g.connect(SFX.amb); src.start();
+                SFX.ambNodes = { src, f, g };
+            }
+            if (SFX.ambBiome !== bi) {
+                SFX.ambBiome = bi;
+                SFX.ambNodes.f.frequency.setTargetAtTime(a.freq, t, 1);
+                SFX.ambNodes.f.Q.setTargetAtTime(a.q, t, 1);
+                SFX.ambNodes.g.gain.setTargetAtTime(a.gain, t, 1);
+            }
+            SFX.nextDrip -= dt;
+            if (SFX.nextDrip <= 0) {
+                SFX.nextDrip = (a.drip || 1.2) * (0.5 + Math.random());
+                if (a.drip) sfxTone({ freq: 1400 + Math.random() * 900, to: 700, dur: 0.12, gain: 0.05, out: SFX.amb });
+                if (a.crackle) for (let i = 0; i < 3; i++) sfxNoise({ dur: 0.03, type: 'highpass', freq: 3000, gain: 0.06, at: Math.random() * 0.4, out: SFX.amb });
+            }
+        }
+
+        function setSound(what, value) {
+            if (what === 'sound') settings.sound = !!value;
+            else if (what === 'ambience') settings.ambience = !!value;
+            else if (what === 'volume') settings.volume = Math.max(0, Math.min(1, Number(value) / 100));
+            else return false;
+            saveSettings(); sfxVolume();
+            if (settings.sound) sfxUnlock();
+            return true;
+        }
+
+
+        // Шаги и лазанье — по пройденному пути; фон шахты
+        const sndMove = { x: null, y: null, step: 0, climb: 0 };
+        function soundTick(dt) {
+            if (sndMove.x === null) { sndMove.x = player.x; sndMove.y = player.y; }
+            const dx = Math.abs(player.x - sndMove.x), dy = Math.abs(player.y - sndMove.y);
+            sndMove.x = player.x; sndMove.y = player.y;
+            if (dx > 2 || dy > 2) return;                      // телепорт, клеть — не шаги
+            if (player.climbing) { sndMove.climb += dy; if (sndMove.climb >= 0.6) { sndMove.climb = 0; sfx('climb'); } }
+            else if (player.onGround) { sndMove.step += dx; if (sndMove.step >= 0.9) { sndMove.step = 0; sfx('step'); } }
+            updateAmbience(dt);
+        }
+
+        // ============ ТЕЛЕФОН: ВИБРАЦИЯ, ЭКРАН, СКОРОСТЬ ============
+        // Вибрация: в Telegram — его отклик (работает и на iPhone), иначе navigator.vibrate.
+        let lastBuzz = 0;
+        function buzz(kind) {
+            if (!settings.vibrate || !touchMode) return false;
+            const now = Date.now();
+            if (now - lastBuzz < 250) return false;          // не дребезжать каждый кадр
+            lastBuzz = now;
+            const tg = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+            if (tg && tg.HapticFeedback && typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('6.1')) {
+                try {
+                    if (kind === 'warn') tg.HapticFeedback.notificationOccurred('warning');
+                    else tg.HapticFeedback.impactOccurred(kind === 'heavy' ? 'heavy' : 'medium');
+                    return true;
+                } catch (e) { /* старый клиент */ }
+            }
+            if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                navigator.vibrate(kind === 'heavy' ? [60, 40, 90] : kind === 'warn' ? [25, 60, 25] : 35);
+                return true;
+            }
+            return false;
+        }
+
+        // Не гасить экран: Screen Wake Lock (браузер сам отпускает его, когда вкладка скрыта)
+        let wakeLock = null;
+        async function keepAwake() {
+            if (!settings.keepAwake || !touchMode || typeof navigator === 'undefined' || !navigator.wakeLock) return false;
+            if (typeof document !== 'undefined' && document.visibilityState && document.visibilityState !== 'visible') return false;
+            if (wakeLock) return true;
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                if (wakeLock && wakeLock.addEventListener) wakeLock.addEventListener('release', () => { wakeLock = null; });
+                return true;
+            } catch (e) { wakeLock = null; return false; }
+        }
+        function releaseAwake() {
+            if (wakeLock) { try { wakeLock.release(); } catch (e) { /* уже отпущен */ } wakeLock = null; }
+        }
+
+        // Скорость: «быстро» — обычная чёткость и 30 кадров в секунду
+        function lowEndDevice() {
+            if (typeof navigator === 'undefined') return false;
+            const mem = navigator.deviceMemory, cpu = navigator.hardwareConcurrency;
+            return (typeof mem === 'number' && mem <= 2) || (touchMode && typeof cpu === 'number' && cpu <= 4);
+        }
+        function fastMode() { return settings.perf === 'fast' || (settings.perf === 'auto' && lowEndDevice()); }
+
+        // Кнопки на телефоне: размер, прозрачность, сторона
+        function setTouchPad(what, value) {
+            if (what === 'size' && ['small', 'medium', 'large'].includes(value)) settings.tpSize = value;
+            else if (what === 'opacity' && ['faint', 'half', 'solid'].includes(value)) settings.tpOpacity = value;
+            else if (what === 'swap') settings.tpSwap = !!value;
+            else if (what === 'hud' && ['normal', 'large'].includes(value)) settings.hudSize = value;
+            else if (what === 'vibrate') settings.vibrate = !!value;
+            else if (what === 'keepAwake') { settings.keepAwake = !!value; if (!settings.keepAwake) releaseAwake(); else keepAwake(); }
+            else if (what === 'perf' && ['auto', 'fast', 'quality'].includes(value)) { settings.perf = value; if (typeof fitCanvasForDevice === 'function') fitCanvasForDevice(); }
+            else return false;
+            saveSettings(); applySettings();
+            return true;
         }
 
         function setLang(lang) {
@@ -6790,7 +7272,11 @@
         // следующий кадр запрашивается в любом случае, а об ошибке сообщается один раз
         let loopErrorShown = false;
 
+        let lastDrawn = 0;
         function gameLoop(currentTime) {
+            // «быстро» — не чаще 30 кадров в секунду
+            if (fastMode() && currentTime - lastDrawn < 31) { requestAnimationFrame(gameLoop); return; }
+            lastDrawn = currentTime;
             try {
                 gameFrame(currentTime);
             } catch (err) {
@@ -6817,6 +7303,7 @@
                 updateCage(dt);
                 checkShop();
                 updateGoal();
+                soundTick(dt);
                 updateBiome(currentTime);
                 updateCamera();
             }
@@ -7032,7 +7519,17 @@
             const panel = document.getElementById('radioPanel');
             const show = open === undefined ? !panel.classList.contains('open') : open;
             panel.classList.toggle('open', show);
+            if (show && touchMode) videoPanelToggle(false);            // на телефоне — одна шторка за раз
+            updateSheet();
             return show;
+        }
+
+        // Шторка снизу на телефоне: пока открыта, кнопки управления спрятаны
+        function updateSheet() {
+            if (typeof document === 'undefined' || !document.body || !document.body.classList) return;
+            const r = document.getElementById('radioPanel'), v = document.getElementById('videoPanel');
+            const open = !!((r && r.classList.contains('open')) || (v && v.classList.contains('open')));
+            document.body.classList.toggle('sheet-open', touchMode && open);
         }
 
         // Значок поверх игры, пока играет радио
@@ -7214,6 +7711,8 @@
             const show = open === undefined ? !panel.classList.contains('open') : open;
             panel.classList.toggle('open', show);
             if (!show && video.on) videoStop();
+            if (show && touchMode) radioPanelToggle(false);
+            if (typeof updateSheet === 'function') updateSheet();
             return show;
         }
 
@@ -7301,6 +7800,7 @@
         const ONE_SHOT_KEYS = new Set(['KeyE', 'KeyQ', 'KeyR', 'KeyT', 'KeyL', 'KeyC', 'KeyH', 'KeyM', 'KeyV', 'KeyP', 'Backquote', 'KeyG', 'Escape']);
 
         function onKeyDown(e) {
+            sfxUnlock();                       // звук браузеры разрешают только после нажатия
             // набор текста в полях (название станции, адрес, имя сохранения) — не управление
             if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) && e.code !== 'Enter' && e.code !== 'Escape') return;
             keys[e.code] = true;
@@ -7452,6 +7952,7 @@
         window.addEventListener('pagehide', autoSave);
         if (typeof document.addEventListener === 'function') {
             document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && typeof keepAwake === 'function') keepAwake();
                 if (document.visibilityState === 'hidden') { releaseAllKeys(); autoSave(); }
             });
         }
@@ -7502,6 +8003,10 @@
         }
         loadSettings();
         applySettings();
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            window.addEventListener('pointerdown', () => { keepAwake(); sfxUnlock(); }, { passive: true });
+        }
+
         loadAchievements();
         loadSprites();
         fitCanvasForDevice();      // масштаб и чёткость — сразу при запуске
