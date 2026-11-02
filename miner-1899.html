@@ -16,7 +16,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-    Исходный код: https://github.com/Z0rD4n0v1ch/miner-1899
+    Исходный код: https://github.com/Z0rD4n0v1ch/m1899
 -->
 <html lang="ru">
 <head>
@@ -633,8 +633,37 @@
             padding: 10px 6px;
         }
 
-        #sideButtons .ach-btn {
-            grid-column: 1 / -1;
+        /* мои рекорды */
+        .rec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .rec-table th {
+            color: #888;
+            font-weight: normal;
+            text-align: left;
+            padding: 3px 4px;
+        }
+
+        .rec-table td {
+            padding: 4px;
+            border-top: 1px solid #333;
+            color: #ddd;
+        }
+
+        .rec-table tr.best td {
+            color: #ffa500;
+            font-weight: bold;
+        }
+
+        .rec-new {
+            color: #7CFC00;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
         }
 
         /* достижения */
@@ -1675,7 +1704,8 @@
     <div id="sideButtons">
         <button class="btn btn-secondary" onclick="openCharacter()">👷 Персонаж <span class="kbd-hint">(P)</span></button>
         <button class="btn btn-secondary" id="controlsToggle" onclick="toggleControls()">🎮 Управление</button>
-        <button class="btn btn-secondary ach-btn" onclick="openAchievements()">🏅 Достижения</button>
+        <button class="btn btn-secondary" onclick="openAchievements()">🏅 Достижения</button>
+        <button class="btn btn-secondary" onclick="openRecords()">🏆 Рекорды</button>
     </div>
 
     <div id="controls">
@@ -1694,7 +1724,7 @@
         <p><span class="key">P</span> (<span class="key">З</span>) - Персонаж: сила и выносливость; тоники — в лавке</p>
         <p><span class="key">ESC</span> - Меню сохранений</p>
         <p>⚙️ «Настройки» на панели сохранений: где показывать уведомления, поменять панели местами</p>
-        <p class="license-note">Шахтёр 1899 — свободная игра под лицензией <a href="https://github.com/Z0rD4n0v1ch/miner-1899/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a>. <a href="https://github.com/Z0rD4n0v1ch/miner-1899" target="_blank" rel="noopener">Исходный код</a></p>
+        <p class="license-note">Шахтёр 1899 — свободная игра под лицензией <a href="https://github.com/Z0rD4n0v1ch/m1899/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a>. <a href="https://github.com/Z0rD4n0v1ch/m1899" target="_blank" rel="noopener">Исходный код</a></p>
         <p id="debugHelp" style="display: none;"><span class="key">`</span> (<span class="key">Ё</span>) - Режим отладки</p>
         <p>Руда складывается в рюкзак. Продать её можно в лавке на поверхности — просто подойди к ней. Полный рюкзак сам выбросит дешёвую руду ради дорогой. Тяжёлый груз (золото, платина) замедляет.</p>
         <p>Алмазы и изумруды поддаются только железной кирке, рубины и платина — стальной.</p>
@@ -1860,6 +1890,18 @@
             <div class="modal-buttons">
                 <button class="btn" id="finalContinue" onclick="continueAfterFinal()">Играть дальше</button>
                 <button class="btn btn-secondary" onclick="newGameAfterFinal()">Новая игра</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мои рекорды -->
+    <div id="recordsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🏆 Мои рекорды</div>
+            <div id="recordsInfo"></div>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeRecords()">Готово</button>
+                <button class="btn btn-secondary" onclick="clearRecords()">Стереть</button>
             </div>
         </div>
     </div>
@@ -2561,7 +2603,17 @@
             "Звук": "Sound",
             "Звуки игры": "Game sounds",
             "Фон шахты: гул и капли": "Mine ambience: rumble and drips",
-            "Громкость": "Volume"
+            "Громкость": "Volume",
+            "🏆 Рекорды": "🏆 Records",
+            "🏆 Мои рекорды": "🏆 My records",
+            "Стереть": "Clear",
+            "Пока пусто: выполни цель — и здесь появится первый рекорд.": "Empty for now: complete a goal and your first record will appear here.",
+            "Сыграно и записано игр: {0}": "Games played and recorded: {0}",
+            "Время": "Time",
+            "Дата": "Date",
+            "💀 Игр, проигранных в «одной жизни»: {0}": "💀 Games lost in “One life”: {0}",
+            "Стереть все рекорды? Это нельзя отменить.": "Clear all records? This can’t be undone.",
+            "🏆 Новый рекорд!": "🏆 New record!"
             };
         let LANG = 'ru';
 
@@ -4890,6 +4942,99 @@
             gameState.paused = false;
         }
 
+        // ============ МОИ РЕКОРДЫ ============
+        // Без сервера: итоги законченных игр хранятся в этом браузере (как достижения).
+        // Записывается: выполненная цель, смерть в «одной жизни» и свободная игра, когда
+        // начинают новую (если в ней играли хотя бы минуту). Игры с отладкой не записываются.
+        const REC_KEY = 'miner_records';
+        const REC_MAX = 100;
+        let records = [];
+
+        function loadRecords() {
+            try {
+                const a = JSON.parse(localStorage.getItem(REC_KEY) || '[]');
+                records = Array.isArray(a) ? a.filter(r => r && GOALS[r.goal] && Number.isFinite(r.time) && Number.isFinite(r.date)) : [];
+            } catch (e) { records = []; }
+        }
+
+        function saveRecords() { safeSetItem(REC_KEY, JSON.stringify(records.slice(-REC_MAX))); }
+
+        // Категория рекорда: цель (у «Состояния» — со своей суммой)
+        function recordKind(r) { return r.goal === 'wealth' ? `wealth:${r.amount}` : r.goal; }
+
+        // Чем лучше: выполненную цель — быстрее; свободную игру — больше очков
+        function recordBetter(a, b) {
+            if (a.goal === 'free') return a.score > b.score;
+            return a.done && (!b.done || a.time < b.time);
+        }
+
+        // Записать итог текущей игры; true — это новый лучший результат в своей категории
+        function addRecord(result) {
+            if (run.debugUsed) return false;
+            const r = {
+                date: Date.now(), goal: goal.id, amount: goal.amount, done: result === 'done', result,
+                hardcore: mode.hardcore, variant: mode.variant,
+                time: Math.floor(stats.playtime), depth: run.maxDepth, earned: run.earned,
+                score: stats.score, deaths: run.deaths, kills: run.kills
+            };
+            const same = records.filter(x => recordKind(x) === recordKind(r) && (x.goal === 'free' || x.done));
+            const best = (r.goal === 'free' || r.done) && same.every(x => recordBetter(r, x));
+            records.push(r);
+            saveRecords();
+            return best && same.length > 0;
+        }
+
+        // Свободная игра заканчивается, когда начинают новую
+        function recordFreePlay() {
+            if (goal.id === 'free' && !gameOver && stats.playtime >= 60 && (stats.score > 0 || run.maxDepth > 0)) addRecord('free');
+        }
+
+        function recordTitle(kind) {
+            if (kind.startsWith('wealth:')) return `${L(GOALS.wealth.name)}: ${Number(kind.split(':')[1]).toLocaleString(LOCALE())} ¤`;
+            return L(GOALS[kind].name);
+        }
+
+        function renderRecords() {
+            const box = document.getElementById('recordsInfo');
+            if (!box) return;
+            if (!records.length) { box.innerHTML = `<div class="ach-total">${L('Пока пусто: выполни цель — и здесь появится первый рекорд.')}</div>`; return; }
+            const kinds = ['platinum', 'bottom', 'wealth:10000', 'wealth:15000', 'wealth:25000', 'master', 'free'];
+            let html = `<div class="ach-total">${L`Сыграно и записано игр: ${records.length}`}</div>`;
+            for (const k of kinds) {
+                const list = records.filter(r => recordKind(r) === k && (r.goal === 'free' || r.done))
+                    .sort((a, b) => recordBetter(a, b) ? -1 : recordBetter(b, a) ? 1 : 0).slice(0, 5);
+                if (!list.length) continue;
+                html += `<div class="shop-section">${GOALS[k.split(':')[0]].emoji} ${recordTitle(k)}</div><table class="rec-table">`;
+                html += `<tr><th>#</th><th>${L('Время')}</th><th>${L('Глубина')}</th><th>${L('Очки')}</th><th>${L('Дата')}</th></tr>`;
+                list.forEach((r, i) => {
+                    html += `<tr${i === 0 ? ' class="best"' : ''}><td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>` +
+                        `<td>${formatTime(r.time)}${r.hardcore ? ' 💀' : ''}</td><td>${r.depth} ${L('м')}</td>` +
+                        `<td>${r.score.toLocaleString(LOCALE())}</td><td>${new Date(r.date).toLocaleDateString(LOCALE())}</td></tr>`;
+                });
+                html += '</table>';
+            }
+            const fails = records.filter(r => r.result === 'died').length;
+            if (fails) html += `<div class="ach-total" style="margin-top:10px">${L`💀 Игр, проигранных в «одной жизни»: ${fails}`}</div>`;
+            box.innerHTML = html.replace(/¤/g, COIN);
+        }
+
+        function openRecords() {
+            gameState.paused = true;
+            renderRecords();
+            document.getElementById('recordsModal').classList.add('active');
+        }
+
+        function closeRecords() {
+            document.getElementById('recordsModal').classList.remove('active');
+            gameState.paused = false;
+        }
+
+        function clearRecords() {
+            if (!confirm(L('Стереть все рекорды? Это нельзя отменить.'))) return false;
+            records = []; saveRecords(); renderRecords();
+            return true;
+        }
+
         // ============ ЦЕЛИ И ИТОГИ ============
         // Цель выбирается в начале новой игры. Когда она выполнена — финальный экран с
         // итогами; дальше можно играть свободно или начать заново.
@@ -4990,6 +5135,7 @@
             document.getElementById('finalTitle').textContent = title || L('🏆 Цель выполнена!');
             const cont = document.getElementById('finalContinue');
             if (cont && cont.style) cont.style.display = gameOver ? 'none' : '';
+            const isBest = addRecord(gameOver ? 'died' : 'done');
             const rows = [
                 ...(reason ? [[L('Причина'), reason]] : []),
                 [L('Режим'), modeTitle()],
@@ -5003,8 +5149,8 @@
                 [L('Кирка'), L(PICKAXES[pickaxeTier].name)],
                 [L('Сила / выносливость'), `${hero.str} / ${hero.end}`]
             ];
-            document.getElementById('finalInfo').innerHTML = rows.map(([k, v]) =>
-                `<div class="final-row"><span>${k}</span><b>${withCoins(String(v))}</b></div>`).join('');
+            document.getElementById('finalInfo').innerHTML = (isBest ? `<div class="rec-new">${L('🏆 Новый рекорд!')}</div>` : '') +
+                rows.map(([k, v]) => `<div class="final-row"><span>${k}</span><b>${withCoins(String(v))}</b></div>`).join('');
             document.getElementById('finalModal').classList.add('active');
         }
 
@@ -6608,6 +6754,7 @@
         // Новая игра
         function newGame(noConfirm) {
             if (noConfirm === true || confirm(L('Начать новую игру? Несохранённый прогресс будет потерян.'))) {
+                recordFreePlay();
                 worldSeed = Date.now();
                 generateWorld(worldSeed);
                 player.x = WORLD_WIDTH / 2;
@@ -7836,6 +7983,7 @@
                     closeSettings();
                     closeCharacter();
                     closeAchievements();
+                    closeRecords();
                     closeShop();
                     closeSaveModal();
                     closeLoadModal();
@@ -8008,6 +8156,7 @@
         }
 
         loadAchievements();
+        loadRecords();
         loadSprites();
         fitCanvasForDevice();      // масштаб и чёткость — сразу при запуске
 

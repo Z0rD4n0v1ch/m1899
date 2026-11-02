@@ -4,7 +4,7 @@
 
 A 2D mining game in a single HTML file: dig 788 meters down, sell ore at the shop, upgrade your gear and survive the depths. Runs in any modern browser on a computer or phone, and as a Telegram mini app. Nothing to install.
 
-**Play online:** https://z0rd4n0v1ch.github.io/m1899/play/ — or download `miner-1899.html` from [Releases](https://github.com/Z0rD4n0v1ch/miner-1899/releases) and open it in a browser.
+**Play online:** https://z0rd4n0v1ch.github.io/m1899/play/ — or download `miner-1899.html` from [Releases](https://github.com/Z0rD4n0v1ch/m1899/releases) and open it in a browser.
 
 ![The game](docs/screenshots/en/overview.png)
 
@@ -17,6 +17,7 @@ A 2D mining game in a single HTML file: dig 788 meters down, sell ore at the sho
 - **Character** — strength and stamina grow from work; tonics from the shop raise the level. Heavy pickaxes need strength.
 - **Goals and modes** — choose a goal (platinum to the top, bottom of the mine, a fortune, mastery or free play) and a mode: normal or **hardcore** (one life, or harsh; autosave only; optional darkness, fierce creatures, no cage, no regeneration).
 - **20 achievements**, shared across all your games.
+- **My records** — your best games per goal (fastest completions, highest free-play scores), stored in your browser; no server needed.
 - **Living graphics** — animated SVG sprites; zoom: small, medium or large; crisp on high-DPI screens.
 - **Radio and video** — add your own online stations and YouTube, RuTube, VK or .mp4 videos; plain style, a gramophone or a TV set.
 - **Sound** — all sounds are generated in code (Web Audio): pickaxe hits, coins, footsteps, cave-ins, gas, explosions, creatures; plus mine ambience of its own in every layer. Volume and switches in Settings.
@@ -57,7 +58,7 @@ The game can be opened from a Telegram bot as a mini app, without a server of yo
 
 - Everything is in `miner-1899.html` — HTML, CSS and vanilla JavaScript, no build, no dependencies.
 - Tests: `node <name>.test.js` — each test runs the real game file in a Node.js sandbox. Run all: `for t in *.test.js; do node "$t" | tail -1; done`.
-- Sync and releases: `./sync.sh push "message"` and `./sync.sh release X.Y.Z`. A GitHub Actions workflow creates the release page with the changelog and the game file.
+- Sync and releases: `./sync.sh push "message"` and `./sync.sh release X.Y.Z`. GitHub Actions then creates the release page (changelog + game file) and publishes the website from the `site/` folder with the game in `play/`.
 - Project rules: [CONTRIBUTING.md](CONTRIBUTING.md) · changes: [CHANGELOG.md](CHANGELOG.md) · plans: [ROADMAP.md](ROADMAP.md) (in Russian).
 
 ## How the project is made

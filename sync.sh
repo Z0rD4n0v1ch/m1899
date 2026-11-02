@@ -441,6 +441,7 @@ cmd_release() {
         ok "версия $version на GitHub: https://github.com/${GITHUB_USER}/${REPO_NAME}/releases/tag/${tag}"
         printf '\n%sСтраница выпуска%s с описанием из CHANGELOG и файлом игры появится сама через минуту-две\n' "$C_DIM" "$C_OFF"
         printf '  (её создаёт .github/workflows/release.yml; ход — во вкладке Actions)\n'
+        printf '%sСайт%s https://z0rd4n0v1ch.github.io/m1899/ обновится сам (pages.yml) — тоже через минуту-две\n' "$C_DIM" "$C_OFF"
     else
         warn "origin не привязан — тег создан локально. Выполни ./sync.sh init"
     fi

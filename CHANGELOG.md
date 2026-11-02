@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+### Добавлено
+- **Мои рекорды** — личная таблица лучших игр без сервера (хранится в браузере): по каждой цели пять лучших — самые быстрые прохождения, для свободной игры — больше всего очков; хардкор отмечен 💀; «🏆 Новый рекорд!» на финальном экране; игры с отладкой не записываются; можно стереть. Кнопка «🏆 Рекорды» под статистикой
+- `records.test.js` — 22 проверки
+
+### Изменено
+- **Один репозиторий:** сайт переехал в репозиторий игры (папка `site/`) и публикуется сам при выпуске версии (`.github/workflows/pages.yml`); репозиторий называется **`m1899`** (раньше `miner-1899`, старые ссылки GitHub перенаправляет). Адрес сайта и Telegram-бот не изменились
+
 ### Планируется
 - Подробнее — в [ROADMAP.md](ROADMAP.md)
 
@@ -348,20 +355,20 @@
 - Камера, следующая за игроком
 - Легенда блоков в интерфейсе
 
-[Unreleased]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v2.3.0...HEAD
-[2.3.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v2.2.0...v2.3.0
-[2.2.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v2.1.0...v2.2.0
-[2.1.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v2.0.0...v2.1.0
-[2.0.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.8.0...v2.0.0
-[1.8.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.7.2...v1.8.0
-[1.7.2]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.7.1...v1.7.2
-[1.7.1]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.7.0...v1.7.1
-[1.7.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.6.1...v1.7.0
-[1.6.1]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.6.0...v1.6.1
-[1.6.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.5.0...v1.6.0
-[1.5.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.1.1...v1.2.0
-[1.1.1]: https://github.com/Z0rD4n0v1ch/miner-1899/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/Z0rD4n0v1ch/miner-1899/releases/tag/v1.1.0
+[Unreleased]: https://github.com/Z0rD4n0v1ch/m1899/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v2.2.0...v2.3.0
+[2.2.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.8.0...v2.0.0
+[1.8.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.7.2...v1.8.0
+[1.7.2]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.7.1...v1.7.2
+[1.7.1]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.6.1...v1.7.0
+[1.6.1]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/Z0rD4n0v1ch/m1899/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/Z0rD4n0v1ch/m1899/releases/tag/v1.1.0
