@@ -50,6 +50,8 @@ You start at the shop with a rusty pickaxe, ten ladders and an empty canvas sack
 
 ![Choosing a goal](docs/screenshots/en/goal.png)
 
+![My records](docs/screenshots/en/records.png)
+
 ## Telegram
 
 The game can be opened from a Telegram bot as a mini app, without a server of your own. See [TELEGRAM.md](TELEGRAM.md) (in Russian, with English texts for the bot).
