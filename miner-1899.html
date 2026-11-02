@@ -22,6 +22,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- установка как приложение (на сайте игры рядом лежат manifest и sw.js) -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>Шахтёр 1899 — 2D-игра про шахтёра</title>
     <style>
         * {
@@ -1990,6 +1994,11 @@
                 </label>
             </div>
             <div class="setting">
+                <div class="setting-label">Подсказки</div>
+                <label class="setting-check"><input type="checkbox" id="optTips" onchange="setSound('tips', this.checked)" checked> Подсказки для новичка</label>
+                <button class="btn btn-secondary btn-small" onclick="resetTips()">Показать подсказки снова</button>
+            </div>
+            <div class="setting">
                 <div class="setting-label">Скорость</div>
                 <div class="setting-options" id="perfOptions">
                     <button class="btn btn-secondary" data-perf="auto" onclick="setTouchPad('perf', 'auto')">Авто</button>
@@ -2613,7 +2622,23 @@
             "Дата": "Date",
             "💀 Игр, проигранных в «одной жизни»: {0}": "💀 Games lost in “One life”: {0}",
             "Стереть все рекорды? Это нельзя отменить.": "Clear all records? This can’t be undone.",
-            "🏆 Новый рекорд!": "🏆 New record!"
+            "🏆 Новый рекорд!": "🏆 New record!",
+            "В облаке Telegram есть сохранение новее — с другого устройства. Продолжить его?": "Telegram cloud has a newer save — from another device. Continue it?",
+            "☁️ Загружено сохранение из облака Telegram": "☁️ Loaded the save from Telegram cloud",
+            "🎮 Геймпад подключён: A — копать, B — бег, X — лавка, Y — лечиться": "🎮 Gamepad connected: A — dig, B — run, X — shop, Y — heal",
+            "⛏️ Копай: встань у блока и держи пробел. Вниз — S + пробел, вверх — W + пробел": "⛏️ Dig: stand next to a block and hold Space. Down — S + Space, up — W + Space",
+            "⛏️ Копай: держи большую кнопку ⛏. Вниз — с ▼, вверх — с ▲": "⛏️ Dig: hold the big ⛏ button. Down — with ▼, up — with ▲",
+            "🎒 Руда в рюкзаке! Поднимись к лавке на поверхности — продажа сама": "🎒 Ore in the backpack! Climb up to the shop on the surface — it sells by itself",
+            "🧗 Как выбраться: лестница — Q, ступеньки — W + пробел, глубоко — клеть (C)": "🧗 Getting out: ladder — Q, steps — W + Space, deep down — the cage (C)",
+            "🧗 Как выбраться: «Лестн.», ступеньки — ⛏ с ▲, глубоко — «Клеть»": "🧗 Getting out: “Ladder”, steps — ⛏ with ▲, deep down — “Cage”",
+            "🏚️ В лавке (E) — лопата, лестницы, кирки получше": "🏚️ At the shop (E) — a shovel, ladders, better pickaxes",
+            "🏚️ В лавке («Лавка») — лопата, лестницы, кирки получше": "🏚️ At the shop (“Shop”) — a shovel, ladders, better pickaxes",
+            "🩹 Здоровье понемногу возвращается само, быстрее — бинтами (H)": "🩹 Health slowly comes back by itself, faster with bandages (H)",
+            "🩹 Здоровье понемногу возвращается само, быстрее — бинтами («Лечить»)": "🩹 Health slowly comes back by itself, faster with bandages (“Heal”)",
+            "💡 Подсказки покажутся снова": "💡 Tips will show again",
+            "Подсказки": "Tips",
+            "Подсказки для новичка": "Beginner tips",
+            "Показать подсказки снова": "Show tips again"
             };
         let LANG = 'ru';
 
@@ -4799,6 +4824,7 @@
             gameOver = true;
             gameState.paused = true;
             try { localStorage.removeItem('miner_autosave'); } catch (e) { /* хранилище недоступно */ }
+            cloudForget();
             showFinal(L`💀 Шахта забрала тебя`, reason);
         }
 
@@ -6690,7 +6716,9 @@
             if (gameOver) return;               // «одна жизнь» закончилась — сохранять нечего
             if (!world.length) return;
             const saveData = createSaveData(L('Автосохранение'));
-            if (!safeSetItem('miner_autosave', JSON.stringify(saveData))) warnStorage();
+            const json = JSON.stringify(saveData);
+            if (!safeSetItem('miner_autosave', json)) warnStorage();
+            cloudSave(json);                    // в Telegram — ещё и в облако
         }
 
         // Загрузка автосохранения при старте
@@ -7001,7 +7029,7 @@
         // вид радио и видео по умолчанию простой: граммофон и телевизор игрок включает сам
         const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null,
             tpSize: 'medium', tpOpacity: 'half', tpSwap: false, hudSize: 'normal',
-            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6 };
+            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true };
         const RADIO_SKINS = ['plain', 'gramophone'];
         const VIDEO_SKINS = ['plain', 'tv'];
 
@@ -7021,6 +7049,7 @@
                 if (['auto', 'fast', 'quality'].includes(st.perf)) settings.perf = st.perf;
                 if (typeof st.sound === 'boolean') settings.sound = st.sound;
                 if (typeof st.ambience === 'boolean') settings.ambience = st.ambience;
+                if (typeof st.tips === 'boolean') settings.tips = st.tips;
                 if (Number.isFinite(st.volume) && st.volume >= 0 && st.volume <= 1) settings.volume = st.volume;
                 if (st.lang === 'ru' || st.lang === 'en') settings.lang = st.lang;
                 // ссылка с сайта: play/?lang=en — язык страницы сайта становится языком игры
@@ -7074,6 +7103,7 @@
             const vb = document.getElementById('optVibrate'); if (vb) vb.checked = settings.vibrate;
             const so = document.getElementById('optSound'); if (so) so.checked = settings.sound;
             const am = document.getElementById('optAmbience'); if (am) am.checked = settings.ambience;
+            const tp = document.getElementById('optTips'); if (tp) tp.checked = settings.tips;
             const vo = document.getElementById('optVolume'); if (vo) vo.value = Math.round(settings.volume * 100);
             const ka = document.getElementById('optKeepAwake'); if (ka) ka.checked = settings.keepAwake;
             if (document.querySelectorAll) document.querySelectorAll('#langOptions [data-lang]').forEach(b => b.classList.toggle('chosen', b.dataset.lang === LANG));
@@ -7228,6 +7258,7 @@
         function setSound(what, value) {
             if (what === 'sound') settings.sound = !!value;
             else if (what === 'ambience') settings.ambience = !!value;
+            else if (what === 'tips') settings.tips = !!value;
             else if (what === 'volume') settings.volume = Math.max(0, Math.min(1, Number(value) / 100));
             else return false;
             saveSettings(); sfxVolume();
@@ -7246,6 +7277,138 @@
             if (player.climbing) { sndMove.climb += dy; if (sndMove.climb >= 0.6) { sndMove.climb = 0; sfx('climb'); } }
             else if (player.onGround) { sndMove.step += dx; if (sndMove.step >= 0.9) { sndMove.step = 0; sfx('step'); } }
             updateAmbience(dt);
+        }
+
+
+        // ============ СОХРАНЕНИЯ В ОБЛАКЕ TELEGRAM ============
+        // В Telegram автосохранение дублируется в CloudStorage бота — и переезжает между
+        // телефоном и компьютером. Значение там до 4096 знаков, поэтому сохранение режется
+        // на части: save_0, save_1… и save_meta { n, at }.
+        const CLOUD_CHUNK = 4000, CLOUD_MAX_PARTS = 400;
+        let cloudSavedAt = 0;
+        function tgCloud() {
+            const tg = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+            return tg && tg.CloudStorage && typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('6.9') ? tg.CloudStorage : null;
+        }
+        function cloudSave(json, force) {
+            const cs = tgCloud();
+            if (!cs) return false;
+            const now = Date.now();
+            if (!force && now - cloudSavedAt < 20000) return false;     // не чаще раза в 20 секунд
+            const n = Math.ceil(json.length / CLOUD_CHUNK);
+            if (n > CLOUD_MAX_PARTS) return false;
+            cloudSavedAt = now;
+            for (let i = 0; i < n; i++) cs.setItem('save_' + i, json.slice(i * CLOUD_CHUNK, (i + 1) * CLOUD_CHUNK));
+            cs.setItem('save_meta', JSON.stringify({ n, at: now }));
+            return true;
+        }
+        function cloudForget() { const cs = tgCloud(); if (cs) cs.removeItem('save_meta'); }
+        // При запуске в Telegram: если в облаке сохранение новее здешнего — предложить его
+        function cloudCheck() {
+            const cs = tgCloud();
+            if (!cs) return false;
+            cs.getItem('save_meta', (err, raw) => {
+                if (err || !raw) return;
+                let meta; try { meta = JSON.parse(raw); } catch (e) { return; }
+                if (!meta || !Number.isInteger(meta.n) || meta.n < 1 || meta.n > CLOUD_MAX_PARTS) return;
+                let localAt = 0;
+                try { const loc = JSON.parse(localStorage.getItem('miner_autosave') || 'null'); localAt = (loc && loc.savedAt) || 0; } catch (e) { /* нет */ }
+                if (meta.at <= localAt + 5000) return;                     // здесь не старее облака
+                const keys = Array.from({ length: meta.n }, (_, i) => 'save_' + i);
+                cs.getItems(keys, (err2, vals) => {
+                    if (err2 || !vals) return;
+                    const json = keys.map(k => vals[k] || '').join('');
+                    let data; try { data = JSON.parse(json); } catch (e) { return; }
+                    if (!confirm(L('В облаке Telegram есть сохранение новее — с другого устройства. Продолжить его?'))) return;
+                    if (loadSaveData(data, true)) {
+                        for (const id of ['modeModal', 'goalModal']) { const m = document.getElementById(id); if (m) m.classList.remove('active'); }
+                        gameState.paused = false;
+                        showNotification(L('☁️ Загружено сохранение из облака Telegram'));
+                    }
+                });
+            });
+            return true;
+        }
+
+        // ============ ГЕЙМПАД ============
+        // Джойстик Xbox/PlayStation: стик и крестовина — движение, кнопки — как клавиши.
+        const PAD_MAP = [
+            [0, 'Space'], [1, 'ShiftLeft'], [2, 'KeyE'], [3, 'KeyH'], [4, 'KeyQ'], [5, 'KeyR'],
+            [6, 'KeyC'], [7, 'KeyT'], [8, 'KeyM'], [9, 'Escape'],
+            [12, 'KeyW'], [13, 'KeyS'], [14, 'KeyA'], [15, 'KeyD']
+        ];
+        const padDown = {};
+        let padAnnounced = false;
+        function padKey(code, down) {
+            if (!!padDown[code] === down) return;
+            padDown[code] = down;
+            const ev = { code, key: '', repeat: false, preventDefault() {}, target: null };
+            if (down) onKeyDown(ev); else onKeyUp(ev);
+        }
+        function pollGamepad() {
+            if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return false;
+            const pad = [...navigator.getGamepads()].find(g => g && g.connected);
+            if (!pad) return false;
+            if (!padAnnounced) { padAnnounced = true; showNotification(L('🎮 Геймпад подключён: A — копать, B — бег, X — лавка, Y — лечиться')); }
+            const btn = i => !!(pad.buttons[i] && pad.buttons[i].pressed);
+            const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0, DZ = 0.45;
+            const want = {};
+            for (const [i, code] of PAD_MAP) if (btn(i)) want[code] = true;
+            if (ax < -DZ) want.KeyA = true;
+            if (ax > DZ) want.KeyD = true;
+            if (ay < -DZ) want.KeyW = true;
+            if (ay > DZ) want.KeyS = true;
+            const all = new Set([...PAD_MAP.map(m => m[1]), 'KeyA', 'KeyD', 'KeyW', 'KeyS']);
+            for (const code of all) padKey(code, !!want[code]);
+            return true;
+        }
+
+        // ============ ПОДСКАЗКИ НОВИЧКУ ============
+        // В первых играх — короткие подсказки, каждая один раз (запоминаются в браузере).
+        const TIPS_KEY = 'miner_tips';
+        let tipsShown = {};
+        try { tipsShown = JSON.parse(localStorage.getItem(TIPS_KEY) || '{}') || {}; } catch (e) { tipsShown = {}; }
+        let tipClock = 0;
+        const TIPS = [
+            { id: 'dig', when: () => player.y < SURFACE_Y + 1 && run.maxDepth === 0,
+              key: () => L('⛏️ Копай: встань у блока и держи пробел. Вниз — S + пробел, вверх — W + пробел'),
+              touch: () => L('⛏️ Копай: держи большую кнопку ⛏. Вниз — с ▼, вверх — с ▲') },
+            { id: 'ore', when: () => backpackCount() > 0,
+              key: () => L('🎒 Руда в рюкзаке! Поднимись к лавке на поверхности — продажа сама'),
+              touch: () => L('🎒 Руда в рюкзаке! Поднимись к лавке на поверхности — продажа сама') },
+            { id: 'out', when: () => currentDepth() >= 12,
+              key: () => L('🧗 Как выбраться: лестница — Q, ступеньки — W + пробел, глубоко — клеть (C)'),
+              touch: () => L('🧗 Как выбраться: «Лестн.», ступеньки — ⛏ с ▲, глубоко — «Клеть»') },
+            { id: 'shop', when: () => stats.money >= 40 && player.y < SURFACE_Y + 1,
+              key: () => L('🏚️ В лавке (E) — лопата, лестницы, кирки получше'),
+              touch: () => L('🏚️ В лавке («Лавка») — лопата, лестницы, кирки получше') },
+            { id: 'heal', when: () => health < maxHealth() * 0.5,
+              key: () => L('🩹 Здоровье понемногу возвращается само, быстрее — бинтами (H)'),
+              touch: () => L('🩹 Здоровье понемногу возвращается само, быстрее — бинтами («Лечить»)') }
+        ];
+        function updateTips(dt) {
+            if (!settings.tips || run.debugUsed || gameState.paused) return;
+            tipClock -= dt;
+            if (tipClock > 0) return;
+            for (const t of TIPS) {
+                if (tipsShown[t.id] || !t.when()) continue;
+                tipsShown[t.id] = Date.now();
+                safeSetItem(TIPS_KEY, JSON.stringify(tipsShown));
+                showNotification((touchMode ? t.touch : t.key)(), 7000);
+                tipClock = 8;                                   // не больше одной подсказки за 8 секунд
+                return;
+            }
+        }
+        function resetTips() { tipsShown = {}; safeSetItem(TIPS_KEY, '{}'); showNotification(L('💡 Подсказки покажутся снова')); }
+
+        // ============ УСТАНОВКА КАК ПРИЛОЖЕНИЕ ============
+        // На сайте игры (https) регистрируется service worker: игра ставится на главный экран
+        // и открывается без интернета. Из файла и внутри Telegram — не нужно.
+        function registerPwa() {
+            if (typeof navigator === 'undefined' || !navigator.serviceWorker || typeof location === 'undefined') return false;
+            if ((location.protocol !== 'https:' && location.hostname !== 'localhost') || inTelegram()) return false;
+            navigator.serviceWorker.register('sw.js').catch(() => { /* рядом нет sw.js (например, копия игры на другом сайте) */ });
+            return true;
         }
 
         // ============ ТЕЛЕФОН: ВИБРАЦИЯ, ЭКРАН, СКОРОСТЬ ============
@@ -7382,14 +7545,14 @@
 
         const stopTimer = id => { if (typeof clearTimeout === 'function') clearTimeout(id); };
 
-        function showNotification(message) {
+        function showNotification(message, ms = 3000) {
             // такое же сообщение уже на экране — не плодим копии, а пишем «×2», «×3»…
             const same = liveNotifications.find(n => n._message === message);
             if (same) {
                 same._count++;
                 setCoinText(same, `${message} ×${same._count}`);
                 stopTimer(same._timer);
-                same._timer = setTimeout(() => dropNotification(same), 3000);
+                same._timer = setTimeout(() => dropNotification(same), ms);
                 restackNotifications();
                 return;
             }
@@ -7402,7 +7565,7 @@
             liveNotifications.push(notif);
             while (liveNotifications.length > MAX_NOTIFICATIONS) dropNotification(liveNotifications[0]);
             restackNotifications();
-            notif._timer = setTimeout(() => dropNotification(notif), 3000);
+            notif._timer = setTimeout(() => dropNotification(notif), ms);
         }
 
         function dropNotification(notif) {
@@ -7437,6 +7600,7 @@
         }
 
         function gameFrame(currentTime) {
+            pollGamepad();
             const frameMs = currentTime - lastTime;
             const dt = Math.min(frameMs / 1000, 0.1);
             lastTime = currentTime;
@@ -7451,6 +7615,7 @@
                 checkShop();
                 updateGoal();
                 soundTick(dt);
+                updateTips(dt);
                 updateBiome(currentTime);
                 updateCamera();
             }
@@ -8140,6 +8305,7 @@
             // не дать случайно закрыть игру с несохранённым прогрессом
             if (atLeast('6.2') && tg.enableClosingConfirmation) tg.enableClosingConfirmation();
             if (typeof tg.onEvent === 'function') tg.onEvent('viewportChanged', () => { if (typeof fitCanvasForDevice === 'function') fitCanvasForDevice(); });
+            cloudCheck();
             return true;
         }
 
@@ -8157,6 +8323,7 @@
 
         loadAchievements();
         loadRecords();
+        registerPwa();
         loadSprites();
         fitCanvasForDevice();      // масштаб и чёткость — сразу при запуске
 

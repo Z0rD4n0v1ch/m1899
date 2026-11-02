@@ -21,6 +21,7 @@ A 2D mining game in a single HTML file: dig 788 meters down, sell ore at the sho
 - **Living graphics** — animated SVG sprites; zoom: small, medium or large; crisp on high-DPI screens.
 - **Radio and video** — add your own online stations and YouTube, RuTube, VK or .mp4 videos; plain style, a gramophone or a TV set.
 - **Sound** — all sounds are generated in code (Web Audio): pickaxe hits, coins, footsteps, cave-ins, gas, explosions, creatures; plus mine ambience of its own in every layer. Volume and switches in Settings.
+- **Install as an app** from the website (works offline), **gamepad** support (Xbox/PlayStation), **Telegram cloud saves** between devices, and **beginner tips**.
 - **Two languages** — English and Russian, chosen from your browser language and switchable in Settings.
 - **Saves** — autosave, three slots, export and import as a file.
 
