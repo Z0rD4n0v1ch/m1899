@@ -41,7 +41,7 @@ check('твари: крыса, мышь (летит и спит), паук, са
     ['rat.run', 'bat.fly', 'bat.hang', 'spider.crawl', 'salamander.crawl', 'salamander.hidden'].every(k => sprites[k] === 2));
 const svgs = g.run('Object.values(SPRITES).flat()');
 check(`все ${svgs.length} кадров — SVG (клетка 40×40, лавка 60×60) с закрытым тегом`, svgs.every(s => s.startsWith('<svg xmlns="http://www.w3.org/2000/svg"') && /viewBox="0 0 (40 40|60 60)"/.test(s) && s.trim().endsWith('</svg>')));
-check('в SVG нет внешних ссылок — всё внутри файла игры', svgs.every(s => !/href=|url\(/.test(s)));
+check('в SVG нет внешних ссылок — всё внутри файла игры (только свои фильтры url(#…))', svgs.every(s => !/href=|url\((?!#)/.test(s)));
 check('кадры загружаются как картинки', g.run('Object.keys(spriteImg).length') === svgs.length);
 
 console.log('Позы шахтёра');

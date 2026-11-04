@@ -2061,6 +2061,7 @@
                 <div class="setting-label">Удобство</div>
                 <label class="setting-check"><input type="checkbox" id="optPalette" onchange="setSound('palette', this.checked)"> Для дальтоников: значки на руде (● золото, ○ серебро, ◆ алмаз, ■ изумруд, ▲ рубин, ✚ платина)</label>
                 <label class="setting-check"><input type="checkbox" id="optBigText" onchange="setSound('bigText', this.checked)"> Крупный текст: панели, окна, уведомления</label>
+                <label class="setting-check"><input type="checkbox" id="optTextures" onchange="setSound('textures', this.checked)" checked> Текстуры блоков (выключить — ровные клетки, быстрее на слабых телефонах)</label>
             </div>
             <div class="setting">
                 <div class="setting-label">Свои клавиши</div>
@@ -2832,7 +2833,8 @@
             "Для дальтоников: значки на руде (● золото, ○ серебро, ◆ алмаз, ■ изумруд, ▲ рубин, ✚ платина)": "Colour-blind friendly: symbols on ore (● gold, ○ silver, ◆ diamond, ■ emerald, ▲ ruby, ✚ platinum)",
             "Крупный текст: панели, окна, уведомления": "Large text: panels, windows, notifications",
             "Свои клавиши": "Custom keys",
-            "Как было": "Reset"
+            "Как было": "Reset",
+            "Текстуры блоков (выключить — ровные клетки, быстрее на слабых телефонах)": "Block textures (off — flat tiles, faster on weak phones)"
             };
         let LANG = 'ru';
 
@@ -5286,6 +5288,105 @@
 
 
 
+
+        // ============ ТЕКСТУРЫ БЛОКОВ ============
+        // Камень, песок, глина, гравий, земля и руда — не ровные клетки, а с фактурой:
+        // камешки, трещины, зерно, прожилки; руда — самородки в породе пласта с бликом.
+        // Каждая текстура (4 варианта на блок и пласт) рисуется один раз под размер клетки.
+        const TEX = {};
+        function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+        function shade(h, k) { const [r, g, b] = hexRgb(h); const f = v => Math.max(0, Math.min(255, Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)))); return `rgb(${f(r)},${f(g)},${f(b)})`; }
+        const ORE_LOOK = {
+            [BLOCK_TYPES.COAL]: { c: '#1c1c1c', hi: '#6b6f78', n: 5, shape: 'chunk' },
+            [BLOCK_TYPES.GOLD]: { c: '#e8b923', hi: '#fff3b0', n: 4, shape: 'chunk' },
+            [BLOCK_TYPES.SILVER]: { c: '#c8ccd2', hi: '#ffffff', n: 4, shape: 'chunk' },
+            [BLOCK_TYPES.DIAMOND]: { c: '#3fe0f0', hi: '#e8ffff', n: 3, shape: 'gem' },
+            [BLOCK_TYPES.EMERALD]: { c: '#20b85a', hi: '#b8ffd0', n: 3, shape: 'gem' },
+            [BLOCK_TYPES.RUBY]: { c: '#e0204a', hi: '#ffc0cc', n: 3, shape: 'gem' },
+            [BLOCK_TYPES.PLATINUM]: { c: '#e6e9f0', hi: '#ffffff', n: 4, shape: 'chunk' }
+        };
+        function paintTexture(g, px, block, rock, v) {
+            let seed = (block * 7919 + v * 104729 + px) >>> 0;
+            const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+            const S = px / 20;
+            const ore = ORE_LOOK[block];
+            const base = ore || block === BLOCK_TYPES.STONE || block === BLOCK_TYPES.GAS ? rock : BLOCK_COLORS[block];
+            g.fillStyle = base; g.fillRect(0, 0, px, px);
+            const dots = (n, size, k1, k2) => { for (let i = 0; i < n; i++) { g.fillStyle = shade(base, k1 + rnd() * (k2 - k1)); const sz = Math.max(1, size * S * (0.6 + rnd() * 0.8)); g.fillRect(rnd() * (px - sz), rnd() * (px - sz), sz, sz); } };
+            const blob = (cx, cy, r, col) => { g.fillStyle = col; g.beginPath(); const k = 6 + Math.floor(rnd() * 3);
+                for (let i = 0; i < k; i++) { const a = i / k * Math.PI * 2, rr = r * (0.7 + rnd() * 0.5); g[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+                g.closePath(); g.fill(); };
+            if (ore) { g.globalAlpha = 0.22; g.fillStyle = ore.c; g.fillRect(0, 0, px, px); g.globalAlpha = 1; }   // руду видно издалека
+            const isRock = block === BLOCK_TYPES.STONE || block === BLOCK_TYPES.GAS || ore;
+            if (isRock || block === BLOCK_TYPES.BEDROCK) {
+                // камни породы: тёмные пятна с бликом сверху-слева
+                for (let i = 0; i < 4; i++) {
+                    const cx = rnd() * px, cy = rnd() * px, r = (2 + rnd() * 3) * S;
+                    blob(cx, cy, r, shade(base, -0.18 - rnd() * 0.1));
+                    blob(cx - r * 0.3, cy - r * 0.3, r * 0.45, shade(base, 0.12));
+                }
+                // трещинка
+                g.strokeStyle = shade(base, -0.35); g.lineWidth = Math.max(1, 0.7 * S); g.beginPath();
+                let x = rnd() * px, y = rnd() * px; g.moveTo(x, y);
+                for (let i = 0; i < 3; i++) { x += (rnd() - 0.5) * 8 * S; y += (rnd() - 0.2) * 6 * S; g.lineTo(x, y); }
+                g.stroke();
+                dots(10, 0.8, -0.2, 0.15);
+            } else if (block === BLOCK_TYPES.DIRT) {
+                dots(22, 1, -0.25, 0.15);
+                for (let i = 0; i < 2; i++) blob(rnd() * px, rnd() * px, 1.6 * S, shade('#7a6a5a', rnd() * 0.2));   // камешки в земле
+            } else if (block === BLOCK_TYPES.SAND) {
+                dots(40, 0.7, -0.18, 0.2);
+                g.strokeStyle = shade(base, -0.1); g.lineWidth = Math.max(1, 0.6 * S);            // волны песка
+                for (let i = 0; i < 2; i++) { const y = rnd() * px; g.beginPath(); g.moveTo(0, y); g.quadraticCurveTo(px / 2, y + (rnd() - 0.5) * 6 * S, px, y); g.stroke(); }
+            } else if (block === BLOCK_TYPES.CLAY) {
+                for (let i = 0; i < 3; i++) { const y = (i + 0.5 + (rnd() - 0.5) * 0.5) * px / 3; g.strokeStyle = shade(base, -0.15 + rnd() * 0.25); g.lineWidth = (1 + rnd()) * S;
+                    g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(px * 0.3, y - 2 * S, px * 0.7, y + 2 * S, px, y); g.stroke(); }
+                dots(8, 0.8, -0.2, 0.1);
+            } else if (block === BLOCK_TYPES.GRAVEL) {
+                for (let i = 0; i < 9; i++) { const cx = rnd() * px, cy = rnd() * px, r = (1.4 + rnd() * 1.8) * S; const col = shade(base, -0.25 + rnd() * 0.45);
+                    blob(cx, cy, r, col); g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(cx - r * 0.5, cy - r * 0.6, r * 0.5, r * 0.35); }
+            } else if (block === BLOCK_TYPES.LAVA) {
+                for (let i = 0; i < 4; i++) blob(rnd() * px, rnd() * px, (2.5 + rnd() * 3) * S, i % 2 ? '#ff7a1a' : '#ffb02a');
+                dots(6, 1, 0.3, 0.6);
+            }
+            if (ore) {
+                // самородки руды в породе: тёмная кромка, цвет, блик
+                for (let i = 0; i < ore.n; i++) {
+                    const cx = (0.2 + rnd() * 0.6) * px, cy = (0.2 + rnd() * 0.6) * px, r = (ore.shape === 'gem' ? 3.1 : 3.2 + rnd() * 1.4) * S;
+                    if (ore.shape === 'gem') {
+                        g.fillStyle = shade(ore.c, -0.45); g.beginPath(); g.moveTo(cx, cy - r - S); g.lineTo(cx + r + S, cy); g.lineTo(cx, cy + r + S); g.lineTo(cx - r - S, cy); g.closePath(); g.fill();
+                        g.fillStyle = ore.c; g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r, cy); g.lineTo(cx, cy + r); g.lineTo(cx - r, cy); g.closePath(); g.fill();
+                        g.fillStyle = ore.hi; g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r * 0.4, cy - r * 0.2); g.lineTo(cx - r * 0.2, cy - r * 0.1); g.closePath(); g.fill();
+                    } else {
+                        blob(cx, cy, r + S * 0.8, shade(ore.c, -0.5));
+                        blob(cx, cy, r, ore.c);
+                        g.fillStyle = ore.hi; g.fillRect(cx - r * 0.45, cy - r * 0.55, Math.max(1, r * 0.45), Math.max(1, r * 0.3));
+                    }
+                }
+            }
+        }
+        function blockTexture(block, wx, wy) {
+            if (settings.textures === false) return null;
+            if (!(ORE_LOOK[block] || [BLOCK_TYPES.STONE, BLOCK_TYPES.DIRT, BLOCK_TYPES.SAND, BLOCK_TYPES.CLAY, BLOCK_TYPES.GRAVEL, BLOCK_TYPES.BEDROCK, BLOCK_TYPES.LAVA, BLOCK_TYPES.GAS].includes(block))) return null;
+            const px = Math.max(8, Math.round(TILE_SIZE * ZOOM * RENDER_SCALE));
+            const rock = BIOMES[biomeAtBlock(wx, wy)].rock;
+            const v = (((wx * 73856093) ^ (wy * 19349663)) >>> 0) & 3;
+            const key = block + '|' + rock + '|' + v + '|' + px;
+            if (TEX[key] !== undefined) return TEX[key];
+            if (typeof document === 'undefined' || !document.createElement) return (TEX[key] = null);
+            const c = document.createElement('canvas'); c.width = c.height = px;
+            const g = c.getContext && c.getContext('2d');
+            if (!g || typeof g.fillRect !== 'function' || typeof g.beginPath !== 'function') return (TEX[key] = null);
+            paintTexture(g, px, block, rock, v);
+            return (TEX[key] = c);
+        }
+        // Трава на верхнем ряду земли
+        function drawGrass(x, y) {
+            ctx.fillStyle = '#4f8a2e'; ctx.fillRect(x, y, TILE_SIZE, 4);
+            ctx.fillStyle = '#6fae3e';
+            for (let i = 0; i < 5; i++) ctx.fillRect(x + i * 4 + 1, y - 1, 2, 3);
+        }
+
         // ============ УДОБСТВО: ДАЛЬТОНИКИ, КРУПНЫЙ ТЕКСТ, СВОИ КЛАВИШИ ============
         // Палитра для дальтоников: на руде — значок формы, чтобы различать не только по цвету
         // (рубин и лава, изумруд и золото…).
@@ -6764,6 +6865,11 @@
         const SP = { skin:'#d4a07a', skinD:'#b8835e', shirt:'#6b5a3e', shirtD:'#54452f', strap:'#3e3022', pants:'#3b2f25', boot:'#1d1612',
                      cap:'#5e5a45', capD:'#46432f', brass:'#c8a165', flame:'#ffd65a', wood:'#8b5a2b', iron:'#a7adb3', ironD:'#4a4f55', mous:'#3b2a1e' };
         const svgWrap = body => `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 40 40">${body}</svg>`;
+        // Тёмный контур вокруг силуэта — фигуры читаются на любом фоне, как в пиксельных играх
+        const OUTLINE = `<defs><filter id="o" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="0.9" in="SourceAlpha" result="d"/>
+            <feFlood flood-color="#140d08"/><feComposite in2="d" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <linearGradient id="sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient></defs>`;
+        const svgFig = body => svgWrap(`${OUTLINE}<g filter="url(#o)">${body}</g>`);
         function minerSvg({ legA = 0, legB = 0, arm = 'rest', pick = 'shoulder', climb = false, tool = 'pickaxe' } = {}) {
             const leg = (x, d) => `<rect x="${x}" y="30" width="6" height="7" rx="1" fill="${SP.pants}" transform="rotate(${d} ${x + 3} 30)"/>
                 <rect x="${x - 1}" y="35.5" width="8" height="3" rx="1.2" fill="${SP.boot}" transform="rotate(${d} ${x + 3} 30)"/>`;
@@ -6784,35 +6890,38 @@
                 ? `<circle cx="20" cy="13" r="7" fill="${SP.capD}"/>`
                 : `<circle cx="21" cy="13" r="6.6" fill="${SP.skin}"/><circle cx="25.5" cy="14" r="1.3" fill="${SP.skinD}"/>
                    <path d="M20 16.2 q4 2.5 7.5 -.3 v1.6 q-3.6 2.4 -7.5 0z" fill="${SP.mous}"/><circle cx="24" cy="12" r="1" fill="#1d1612"/>`;
-            return svgWrap(`${leg(13, legA)}${leg(20, legB)}
+            return svgFig(`${leg(13, legA)}${leg(20, legB)}
                 <rect x="11" y="19" width="18" height="13" rx="3" fill="${SP.shirt}"/>
+                <rect x="11" y="19" width="18" height="13" rx="3" fill="url(#sh)"/>
+                <rect x="11" y="28.5" width="18" height="2" fill="#2a2016"/><rect x="18.6" y="28.2" width="2.8" height="2.6" rx=".5" fill="#c8a165"/>
+                <circle cx="20" cy="22" r=".6" fill="#2a2016"/><circle cx="20" cy="25" r=".6" fill="#2a2016"/>
                 <rect x="15" y="19" width="2.4" height="13" fill="${SP.strap}"/><rect x="22.5" y="19" width="2.4" height="13" fill="${SP.strap}"/>
                 ${face}<path d="M13 9 q8 -8 16 0 v2 h-16z" fill="${SP.cap}"/><rect x="${climb ? 13 : 15}" y="9.5" width="${climb ? 14 : 16}" height="2.4" rx="1" fill="${SP.capD}"/>
                 ${climb ? '' : `<circle cx="25.5" cy="7.3" r="2.4" fill="${SP.brass}" stroke="#5a3d16" stroke-width=".7"/><circle cx="25.5" cy="7.3" r="1.2" fill="${SP.flame}"/>`}
                 ${arms}${climb ? '' : pickSvg}`);
         }
-        const ratSvg = s => svgWrap(`<path d="M6 32 q-4 ${s ? -2 : 1} -5 -5" stroke="#d99a9a" stroke-width="1.6" fill="none"/>
+        const ratSvg = s => svgFig(`<path d="M6 32 q-4 ${s ? -2 : 1} -5 -5" stroke="#d99a9a" stroke-width="1.6" fill="none"/>
             <ellipse cx="18" cy="30" rx="12" ry="6.5" fill="#7a6f66"/><ellipse cx="18" cy="32" rx="9" ry="3.6" fill="#968a80"/>
             <ellipse cx="30" cy="28" rx="6.5" ry="5" fill="#7a6f66"/><circle cx="28" cy="23" r="3" fill="#7a6f66"/><circle cx="28" cy="23" r="1.6" fill="#e8a0a0"/>
             <circle cx="32" cy="27" r="1.1" fill="#120c0a"/><circle cx="36.8" cy="29" r="1.2" fill="#e8a0a0"/>
             <rect x="${s ? 10 : 12}" y="34.5" width="3" height="3.5" fill="#5f554d"/><rect x="${s ? 24 : 22}" y="34.5" width="3" height="3.5" fill="#5f554d"/>`);
         const batSvg = (s, hang) => hang
-            ? svgWrap(`<path d="M20 0 v6" stroke="#3a2c46" stroke-width="2"/><path d="M14 6 q6 -3 12 0 l-1 16 q-5 5 -10 0z" fill="#4b3a5a"/>
+            ? svgFig(`<path d="M20 0 v6" stroke="#3a2c46" stroke-width="2"/><path d="M14 6 q6 -3 12 0 l-1 16 q-5 5 -10 0z" fill="#4b3a5a"/>
                 <path d="M17 20 l1 4 2 -3 2 3 1 -4z" fill="#5c4870"/>
                 <circle cx="18" cy="17" r=".9" fill="#ff4040" opacity="${s ? 0 : 1}"/><circle cx="22" cy="17" r=".9" fill="#ff4040" opacity="${s ? 0 : 1}"/>`)
-            : svgWrap(`<path d="M20 19 q-6 ${s ? -12 : -4} -18 ${s ? -9 : 2} q5 3 4 8 q4 -2 6 2 q3 -3 8 -4z" fill="#4b3a5a"/>
+            : svgFig(`<path d="M20 19 q-6 ${s ? -12 : -4} -18 ${s ? -9 : 2} q5 3 4 8 q4 -2 6 2 q3 -3 8 -4z" fill="#4b3a5a"/>
                 <path d="M20 19 q6 ${s ? -12 : -4} 18 ${s ? -9 : 2} q-5 3 -4 8 q-4 -2 -6 2 q-3 -3 -8 -4z" fill="#4b3a5a"/>
                 <ellipse cx="20" cy="21" rx="5" ry="6" fill="#5c4870"/><path d="M16 16 l1 -4 2 3z M24 16 l-1 -4 -2 3z" fill="#5c4870"/>
                 <circle cx="18" cy="19" r="1.1" fill="#ff4040"/><circle cx="22" cy="19" r="1.1" fill="#ff4040"/>
                 <path d="M18.5 23 l.7 1.5 .7 -1.5 M20.6 23 l.7 1.5 .7 -1.5" stroke="#fff" stroke-width=".5" fill="none"/>`);
-        const spiderSvg = s => svgWrap(`<g stroke="#9a9088" stroke-width="1.6" fill="none" stroke-linecap="round">
+        const spiderSvg = s => svgFig(`<g stroke="#9a9088" stroke-width="1.6" fill="none" stroke-linecap="round">
             <path d="M15 26 q-6 -6 -12 0 l-1 ${s ? 6 : 9}"/><path d="M15 28 q-6 -2 -11 4 l-1 ${s ? 6 : 3}"/><path d="M16 30 q-4 1 -7 ${s ? 5 : 8}"/>
             <path d="M25 26 q6 -6 12 0 l1 ${s ? 9 : 6}"/><path d="M25 28 q6 -2 11 4 l1 ${s ? 3 : 6}"/><path d="M24 30 q4 1 7 ${s ? 8 : 5}"/></g>
             <ellipse cx="20" cy="27" rx="7" ry="6" fill="#1e1a18" stroke="#9a9088" stroke-width=".8"/><circle cx="20" cy="21" r="4" fill="#2a2420"/>
             <path d="M18 27 h4 l-2 4z" fill="#c03030"/><circle cx="18.5" cy="20.5" r=".9" fill="#ff5050"/><circle cx="21.5" cy="20.5" r=".9" fill="#ff5050"/>`);
         const salamanderSvg = (s, hidden) => hidden
-            ? svgWrap(`<ellipse cx="22" cy="30" rx="7" ry="3" fill="#e8641e"/><circle cx="19" cy="29" r="1.4" fill="#ffd23c" opacity="${s ? .45 : 1}"/><circle cx="25" cy="29" r="1.4" fill="#ffd23c" opacity="${s ? .45 : 1}"/>`)
-            : svgWrap(`<path d="M3 ${s ? 27 : 31} q6 -4 12 -2 q8 3 16 -1 q5 -2 7 1 q-2 4 -8 4 q-8 1 -15 -1 q-6 -1 -12 2z" fill="#e8641e"/>
+            ? svgFig(`<ellipse cx="22" cy="30" rx="7" ry="3" fill="#e8641e"/><circle cx="19" cy="29" r="1.4" fill="#ffd23c" opacity="${s ? .45 : 1}"/><circle cx="25" cy="29" r="1.4" fill="#ffd23c" opacity="${s ? .45 : 1}"/>`)
+            : svgFig(`<path d="M3 ${s ? 27 : 31} q6 -4 12 -2 q8 3 16 -1 q5 -2 7 1 q-2 4 -8 4 q-8 1 -15 -1 q-6 -1 -12 2z" fill="#e8641e"/>
                 <path d="M28 25 q6 -4 10 0 q-2 4 -8 3z" fill="#f07a2a"/><circle cx="34" cy="25" r="1.2" fill="#1a0a04"/>
                 <circle cx="12" cy="29" r="1.4" fill="#ffd23c"/><circle cx="19" cy="30" r="1.6" fill="#ffd23c"/><circle cx="25" cy="28" r="1.3" fill="#ffd23c"/>
                 <path d="M10 32 l${s ? -3 : -1} 4 M17 33 l${s ? 1 : -1} 4 M24 32 l${s ? -1 : 1} 4 M29 31 l${s ? 1 : 2} 4" stroke="#b8481a" stroke-width="1.6" stroke-linecap="round"/>`);
@@ -6822,7 +6931,7 @@
             const by = alarm && up ? 19 : (f === 1 ? 21.2 : 22);   // в тревоге подпрыгивает, спокойная — покачивается
             const wing = alarm ? (up ? 'M18 ' + by + ' q-6 -7 -9 -2 q4 1 9 4z' : 'M18 ' + (by + 1) + ' q-7 2 -8 6 q4 -3 8 -3z')
                                : 'M17 ' + (by + 1) + ' q-5 1 -6 5 q4 -1 7 -2z';
-            return svgWrap(`<path d="M20 4 v5" stroke="${SP.brass}" stroke-width="1.6"/><circle cx="20" cy="4" r="2" fill="none" stroke="${SP.brass}" stroke-width="1.2"/>
+            return svgFig(`<path d="M20 4 v5" stroke="${SP.brass}" stroke-width="1.6"/><circle cx="20" cy="4" r="2" fill="none" stroke="${SP.brass}" stroke-width="1.2"/>
                 <path d="M8 34 v-16 q12 -14 24 0 v16" fill="rgba(40,30,20,.35)" stroke="${SP.brass}" stroke-width="1.4"/>
                 <ellipse cx="20" cy="${by + 3}" rx="6" ry="4.6" fill="#ffd93b"/><circle cx="25" cy="${by - 1.5}" r="3.3" fill="#ffe14d"/>
                 <path d="M28 ${by - 1.8} l3 1 -3 1z" fill="#e88a1a"/><circle cx="26" cy="${by - 2.3}" r=".8" fill="#1a1208"/>
@@ -6877,18 +6986,18 @@
         const railSvg = () => svgWrap(`<rect x="0" y="35" width="40" height="3" fill="#6b4320"/>
             ${[2, 14, 26].map(x => `<rect x="${x}" y="33" width="8" height="6" rx="1" fill="#5a3a1c"/>`).join('')}
             <rect x="0" y="32" width="40" height="2.2" fill="#9aa0a6"/>`);
-        const cartSvg = () => svgWrap(`<path d="M5 14 h30 l-3 16 h-24z" fill="#6b5a4a" stroke="#2a2420" stroke-width="1.4"/>
+        const cartSvg = () => svgFig(`<path d="M5 14 h30 l-3 16 h-24z" fill="#6b5a4a" stroke="#2a2420" stroke-width="1.4"/>
             <rect x="4" y="12" width="32" height="3.5" rx="1" fill="#8a8f95" stroke="#2a2420" stroke-width="1"/>
             <path d="M9 12 q4 -6 8 -1 q3 -5 7 0 q4 -5 7 1z" fill="#3a3a3a"/><circle cx="14" cy="9" r="2" fill="#FFD700"/><circle cx="24" cy="8.5" r="1.8" fill="#C8CCD2"/>
             <circle cx="12" cy="31" r="3.4" fill="#2a2420" stroke="#9aa0a6" stroke-width="1.2"/><circle cx="28" cy="31" r="3.4" fill="#2a2420" stroke="#9aa0a6" stroke-width="1.2"/>`);
-        const chestSvg = () => svgWrap(`<rect x="5" y="16" width="30" height="20" rx="2" fill="#7a4a24" stroke="#2a1608" stroke-width="1.4"/>
+        const chestSvg = () => svgFig(`<rect x="5" y="16" width="30" height="20" rx="2" fill="#7a4a24" stroke="#2a1608" stroke-width="1.4"/>
             <path d="M5 18 q15 -12 30 0 v2 h-30z" fill="#8f5a2c" stroke="#2a1608" stroke-width="1.4"/>
             <rect x="5" y="22" width="30" height="2.5" fill="#c8a165"/><rect x="11" y="16" width="2.5" height="20" fill="#c8a165"/><rect x="26.5" y="16" width="2.5" height="20" fill="#c8a165"/>
             <rect x="17.5" y="21" width="5" height="6" rx="1" fill="#e0c068" stroke="#5a3d16" stroke-width=".8"/>`);
-        const nuggetSvg = () => svgWrap(`<path d="M9 24 q-2 -8 6 -11 q5 -6 12 -2 q7 2 6 9 q2 8 -6 10 q-6 4 -12 1 q-7 -1 -6 -7z" fill="#e8b923" stroke="#7a5a08" stroke-width="1.4"/>
+        const nuggetSvg = () => svgFig(`<path d="M9 24 q-2 -8 6 -11 q5 -6 12 -2 q7 2 6 9 q2 8 -6 10 q-6 4 -12 1 q-7 -1 -6 -7z" fill="#e8b923" stroke="#7a5a08" stroke-width="1.4"/>
             <path d="M15 17 q4 -3 8 -1" stroke="#fff3b0" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="27" cy="22" r="1.4" fill="#fff3b0"/>`);
 
-        const bossSvg = f => svgWrap(`<path d="M2 ${f ? 30 : 31} q8 -9 16 -6 q8 3 12 -3 q6 -6 9 0 q-1 8 -8 10 q-10 3 -18 1 q-7 -1 -11 -2z" fill="#a8301a" stroke="#3a0a04" stroke-width="1.2"/>
+        const bossSvg = f => svgFig(`<path d="M2 ${f ? 30 : 31} q8 -9 16 -6 q8 3 12 -3 q6 -6 9 0 q-1 8 -8 10 q-10 3 -18 1 q-7 -1 -11 -2z" fill="#a8301a" stroke="#3a0a04" stroke-width="1.2"/>
             <path d="M26 20 q8 -7 13 0 q-2 6 -9 6z" fill="#c8481a" stroke="#3a0a04" stroke-width="1"/>
             <path d="M28 17 l2 -5 2 4 M33 16 l3 -5 1 5" stroke="#ffd23c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
             <circle cx="34" cy="21" r="1.6" fill="#ffd23c"/><circle cx="34" cy="21" r=".7" fill="#1a0a04"/>
@@ -7091,10 +7200,13 @@
                     } else {
                         ctx.fillStyle = BLOCK_COLORS[block];
                     }
-                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    const tex = block !== BLOCK_TYPES.AIR && !isSeeThrough(block) ? blockTexture(block, worldX, worldY) : null;
+                    if (tex) ctx.drawImage(tex, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    else ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (block === BLOCK_TYPES.DIRT && worldY === SURFACE_Y && tex) drawGrass(x * TILE_SIZE, y * TILE_SIZE);
 
                     if (block !== BLOCK_TYPES.AIR && !isSeeThrough(block)) {
-                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                        ctx.strokeStyle = tex ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.2)';
                         ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                     }
                     if (block === BLOCK_TYPES.WATER) drawWater(x * TILE_SIZE, y * TILE_SIZE, worldX, worldY);
@@ -7147,11 +7259,11 @@
                         ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                         drawSpeckles(x * TILE_SIZE, y * TILE_SIZE, worldX, worldY, 'rgba(210, 220, 90, 0.45)', 1);
                     }
-                    if (block === BLOCK_TYPES.COAL) {
+                    if (block === BLOCK_TYPES.COAL && !tex) {
                         // светлые искры, чтобы уголь не сливался с тёмными пещерами
                         drawSpeckles(x * TILE_SIZE, y * TILE_SIZE, worldX, worldY, 'rgba(210, 215, 225, 0.7)', 2);
                     }
-                    if (block === BLOCK_TYPES.SAND || block === BLOCK_TYPES.GRAVEL) {
+                    if ((block === BLOCK_TYPES.SAND || block === BLOCK_TYPES.GRAVEL) && !tex) {
                         drawSpeckles(x * TILE_SIZE, y * TILE_SIZE, worldX, worldY,
                             block === BLOCK_TYPES.SAND ? 'rgba(90, 70, 30, 0.35)' : 'rgba(40, 35, 30, 0.5)',
                             block === BLOCK_TYPES.SAND ? 1 : 3);
@@ -8104,7 +8216,7 @@
         // вид радио и видео по умолчанию простой: граммофон и телевизор игрок включает сам
         const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null,
             tpSize: 'medium', tpOpacity: 'half', tpSwap: false, hudSize: 'normal',
-            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true, events: true, minimap: true, palette: 'normal', bigText: false, keymap: {} };
+            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true, events: true, minimap: true, palette: 'normal', bigText: false, keymap: {}, textures: true };
         const RADIO_SKINS = ['plain', 'gramophone'];
         const VIDEO_SKINS = ['plain', 'tv'];
 
@@ -8129,6 +8241,7 @@
                 if (typeof st.minimap === 'boolean') settings.minimap = st.minimap;
                 if (st.palette === 'cb' || st.palette === 'normal') settings.palette = st.palette;
                 if (typeof st.bigText === 'boolean') settings.bigText = st.bigText;
+                if (typeof st.textures === 'boolean') settings.textures = st.textures;
                 if (st.keymap && typeof st.keymap === 'object') {
                     settings.keymap = {};
                     for (const [k, v] of Object.entries(st.keymap)) if (REMAP_ACTIONS.some(a => a[0] === k) && typeof v === 'string' && /^[A-Za-z0-9]+$/.test(v)) settings.keymap[k] = v;
@@ -8191,6 +8304,7 @@
             const mmo = document.getElementById('optMinimap'); if (mmo) mmo.checked = settings.minimap;
             const pal = document.getElementById('optPalette'); if (pal) pal.checked = settings.palette === 'cb';
             const bt = document.getElementById('optBigText'); if (bt) bt.checked = settings.bigText;
+            const tx = document.getElementById('optTextures'); if (tx) tx.checked = settings.textures;
             if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText);
             renderKeymap();
             const vo = document.getElementById('optVolume'); if (vo) vo.value = Math.round(settings.volume * 100);
@@ -8355,6 +8469,7 @@
             else if (what === 'events') settings.events = !!value;
             else if (what === 'minimap') settings.minimap = !!value;
             else if (what === 'palette') settings.palette = value ? 'cb' : 'normal';
+            else if (what === 'textures') settings.textures = !!value;
             else if (what === 'bigText') { settings.bigText = !!value; if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText); }
             else if (what === 'volume') settings.volume = Math.max(0, Math.min(1, Number(value) / 100));
             else return false;

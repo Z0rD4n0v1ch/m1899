@@ -150,9 +150,10 @@ run('stats.money = 0; player.x = SHOP_X + 1; player.y = SURFACE_Y - 1; openShop(
 check('в лавке у железной кирки указаны изумруды', els.shopList.children.some(c => c.innerHTML.includes('Железная') && c.innerHTML.includes('изумруды')));
 check('у стальной — платина', els.shopList.children.some(c => c.innerHTML.includes('Стальная') && c.innerHTML.includes('платина')));
 run('closeShop()');
-run('generateWorld(4); player.x = 60; player.y = DEPTH_ORIGIN + 50; updateCamera(); world[DEPTH_ORIGIN + 50][62] = BLOCK_TYPES.COAL;');
+run("settings.textures = false; generateWorld(4); player.x = 60; player.y = DEPTH_ORIGIN + 50; updateCamera(); world[DEPTH_ORIGIN + 50][62] = BLOCK_TYPES.COAL;");
 fills.length = 0; run('render()');
-check('на угле светлые искры, чтобы не сливался с пещерой', fills.some(f => f[0] === 'rgba(210, 215, 225, 0.7)'));
+check('без текстур — на угле светлые искры, чтобы не сливался с пещерой (с текстурами уголь лежит в породе пласта)', fills.some(f => f[0] === 'rgba(210, 215, 225, 0.7)'));
+run('settings.textures = true;');
 
 console.log(`\n${passed}/${passed + failed} проверок пройдено`);
 process.exit(failed ? 1 : 0);
