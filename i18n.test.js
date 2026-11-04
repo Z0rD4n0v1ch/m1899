@@ -56,7 +56,7 @@ console.log('Все надписи страницы переведены');
 const body = html.slice(0, html.indexOf('<script>')).replace(/<style>[\s\S]*?<\/style>/, '').replace(/<!--[\s\S]*?-->/g, '');
 const texts = [...body.matchAll(/>([^<]+)</g)].map(m => m[1].replace(/\s+/g, ' ').trim()).filter(t => /[А-Яа-яЁё]/.test(t));
 const attrs = [...body.matchAll(/(?:placeholder|title|aria-label|alt)="([^"]*[А-Яа-яЁё][^"]*)"/g)].map(m => m[1]);
-const skip = new Set(['У', 'Й', 'К', 'Д', 'Е', 'С', 'Р', 'Ь', 'М', 'З', 'Ё', 'Язык · Language', 'Русский']);
+const skip = new Set(['У', 'Й', 'К', 'Д', 'Е', 'С', 'Р', 'Ь', 'М', 'З', 'Ё', 'И', 'Т', 'Язык · Language', 'Русский']);
 const missing = [...new Set([...texts, ...attrs])].filter(t => !skip.has(t) && g.run(`EN_TEXT[${JSON.stringify(t)}] === undefined`));
 check(`статичных надписей ${new Set([...texts, ...attrs]).size}, без перевода: ${missing.length}`, missing.length === 0);
 if (missing.length) console.log('    нет перевода:', missing.slice(0, 10));

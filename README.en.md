@@ -21,6 +21,11 @@ A 2D mining game in a single HTML file: dig 788 meters down, sell ore at the sho
 - **Living graphics** — animated SVG sprites; zoom: small, medium or large; crisp on high-DPI screens.
 - **Radio and video** — add your own online stations and YouTube, RuTube, VK or .mp4 videos; plain style, a gramophone or a TV set.
 - **Sound** — all sounds are generated in code (Web Audio): pickaxe hits, coins, footsteps, cave-ins, gas, explosions, creatures; plus mine ambience of its own in every layer. Volume and switches in Settings.
+- **Accessibility** — colour-blind friendly ore symbols, large text, custom key bindings.
+- **An old miner’s diary** — 10 pages of the mine’s 1899 story found in chests, and **the Master of the Deep**, a fiery boss guarding a platinum vein at the very bottom.
+- **Mini-map and full mine map** (N), **dynamite** (B), **play by mine code** — send your world code to a friend, **all-time statistics**.
+- **New in the mine** — underground lakes (in hardcore you can drown), old drifts with rails and a mine cart to ride, old miners’ chests (sometimes with a map that reveals ore), rare gold nuggets.
+- **Mine of the day** — the same mine for everyone each day: fastest to the bottom and back wins; share your time with friends. **Events** — earthquakes and the trader’s orders for double pay.
 - **Install as an app** from the website (works offline), **gamepad** support (Xbox/PlayStation), **Telegram cloud saves** between devices, and **beginner tips**.
 - **Two languages** — English and Russian, chosen from your browser language and switchable in Settings.
 - **Saves** — autosave, three slots, export and import as a file.
@@ -52,6 +57,10 @@ You start at the shop with a rusty pickaxe, ten ladders and an empty canvas sack
 ![Choosing a goal](docs/screenshots/en/goal.png)
 
 ![My records](docs/screenshots/en/records.png)
+
+![The Master of the Deep](docs/screenshots/en/boss.png)
+
+![An old drift and a lake](docs/screenshots/en/mine.png)
 
 ## Telegram
 

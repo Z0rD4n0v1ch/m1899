@@ -638,6 +638,19 @@
         }
 
         /* мои рекорды */
+        .diary-page { text-align: left; padding: 8px 4px; border-bottom: 1px solid #333; color: #e8dcc8; font-size: 13px; line-height: 1.5; font-style: italic; }
+        .diary-page.locked { color: #666; }
+        .diary-page b { color: #ffa500; font-style: normal; }
+        .keymap-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; }
+        .keymap-row .btn { margin: 0; min-width: 120px; }
+        body.big-text #ui, body.big-text #leftPanel, body.big-text #sidebar .btn, body.big-text .notification, body.big-text .modal-content { zoom: 1.18; }
+        .touch-only-btn { display: none; }
+        body.touch .touch-only-btn { display: block; }
+        #bigMapWrap { max-height: 65vh; overflow-y: auto; text-align: center; }
+        #bigMap { width: 360px; max-width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #555; background: #000; }
+        .code-row { display: flex; gap: 6px; margin-top: 12px; }
+        .code-row input { flex: 1; padding: 8px; background: #222; color: #eee; border: 1px solid #555; border-radius: 6px; font-family: inherit; }
+
         .rec-table {
             width: 100%;
             border-collapse: collapse;
@@ -879,6 +892,10 @@
         }
 
         /* выбор режима */
+        .mode-daily {
+            grid-column: 1 / -1;
+        }
+
         .mode-choice {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1552,7 +1569,7 @@
     </style>
 </head>
 <body>
-    <h1>⛏️ Шахтёр 1899 <span style="font-size:14px;color:#888;font-weight:normal">v2.4.0</span></h1>
+    <h1>⛏️ Шахтёр 1899 <span style="font-size:14px;color:#888;font-weight:normal">v2.5.0</span></h1>
     <div id="layout">
     <!-- Слева: сохранения и радио (радио открывается клавишей M) -->
     <aside id="leftPanel">
@@ -1710,6 +1727,10 @@
         <button class="btn btn-secondary" id="controlsToggle" onclick="toggleControls()">🎮 Управление</button>
         <button class="btn btn-secondary" onclick="openAchievements()">🏅 Достижения</button>
         <button class="btn btn-secondary" onclick="openRecords()">🏆 Рекорды</button>
+        <button class="btn btn-secondary" onclick="openBigMap()">🗺 Карта <span class="kbd-hint">(N)</span></button>
+        <button class="btn btn-secondary" onclick="openStats()">📊 Статистика</button>
+        <button class="btn btn-secondary" onclick="openDiary()">📖 Дневник</button>
+        <button class="btn btn-secondary touch-only-btn" onclick="document.body.classList.remove('menu-open'); lightDynamite()">🧨 Динамит</button>
     </div>
 
     <div id="controls">
@@ -1720,6 +1741,8 @@
         <p><span class="key">Q</span> (<span class="key">Й</span>) - Поставить лестницу, <span class="key">W</span>/<span class="key">S</span> - лезть</p>
         <p><span class="key">R</span> (<span class="key">К</span>) - Спустить верёвку в колодец перед собой</p>
         <p><span class="key">L</span> (<span class="key">Д</span>) - Зажечь погасшую лампу спичкой</p>
+        <p><span class="key">B</span> (<span class="key">И</span>) - Поджечь шашку динамита</p>
+        <p><span class="key">N</span> (<span class="key">Т</span>) - Карта шахты</p>
         <p><span class="key">T</span> (<span class="key">Е</span>) - Натянуть верёвку-переправу через пропасть или лаву</p>
         <p><span class="key">C</span> (<span class="key">С</span>) - Клеть: платный подъём наверх</p>
         <p><span class="key">H</span> (<span class="key">Р</span>) - Лечиться: бинт или аптечка</p>
@@ -1791,6 +1814,14 @@
             <div class="legend-color" style="background: #dc143c;"></div>
             <span>Лава</span>
         </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #2D6FB5;"></div>
+            <span>Вода</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #E8B923;"></div>
+            <span>Самородок</span>
+        </div>
     </div>
 
     </aside>
@@ -1860,6 +1891,11 @@
             <div class="mode-choice">
                 <button class="btn mode-btn" onclick="chooseMode(false)">⛏️ Обычная игра<span>смерть — потеря рюкзака, сохранения как обычно</span></button>
                 <button class="btn btn-danger mode-btn" onclick="showHardcoreOptions()">💀 Хардкор<span>только автосохранение, очки ×1.5</span></button>
+                <button class="btn btn-secondary mode-btn mode-daily" onclick="chooseDaily()">📅 Шахта дня<span>у всех сегодня одна шахта: кто быстрее до дна и наверх</span></button>
+            </div>
+            <div class="code-row">
+                <input type="text" id="worldCodeInput" placeholder="Код шахты: M1899-…" maxlength="13">
+                <button class="btn btn-secondary" onclick="playByCode()">🔑 Играть по коду</button>
             </div>
             <div id="hcOptions" style="display: none;">
                 <div class="setting-label">Что будет при смерти</div>
@@ -1895,6 +1931,34 @@
                 <button class="btn" id="finalContinue" onclick="continueAfterFinal()">Играть дальше</button>
                 <button class="btn btn-secondary" onclick="newGameAfterFinal()">Новая игра</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Карта шахты -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🗺 Карта шахты</div>
+            <div class="ach-total" id="bigMapInfo"></div>
+            <div id="bigMapWrap"><canvas id="bigMap" width="120" height="800"></canvas></div>
+            <div class="modal-buttons"><button class="btn" onclick="closeBigMap()">Готово</button></div>
+        </div>
+    </div>
+
+    <!-- Дневник -->
+    <div id="diaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">📖 Дневник старого шахтёра</div>
+            <div id="diaryInfo"></div>
+            <div class="modal-buttons"><button class="btn" onclick="closeDiary()">Готово</button></div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">📊 Статистика за всё время</div>
+            <div id="statsInfo"></div>
+            <div class="modal-buttons"><button class="btn" onclick="closeStats()">Готово</button></div>
         </div>
     </div>
 
@@ -1994,8 +2058,20 @@
                 </label>
             </div>
             <div class="setting">
+                <div class="setting-label">Удобство</div>
+                <label class="setting-check"><input type="checkbox" id="optPalette" onchange="setSound('palette', this.checked)"> Для дальтоников: значки на руде (● золото, ○ серебро, ◆ алмаз, ■ изумруд, ▲ рубин, ✚ платина)</label>
+                <label class="setting-check"><input type="checkbox" id="optBigText" onchange="setSound('bigText', this.checked)"> Крупный текст: панели, окна, уведомления</label>
+            </div>
+            <div class="setting">
+                <div class="setting-label">Свои клавиши</div>
+                <div id="keymapList"></div>
+                <button class="btn btn-secondary btn-small" onclick="resetKeymap()">Как было</button>
+            </div>
+            <div class="setting">
                 <div class="setting-label">Подсказки</div>
                 <label class="setting-check"><input type="checkbox" id="optTips" onchange="setSound('tips', this.checked)" checked> Подсказки для новичка</label>
+                <label class="setting-check"><input type="checkbox" id="optEvents" onchange="setSound('events', this.checked)" checked> События: землетрясения и заказы скупщика</label>
+                <label class="setting-check"><input type="checkbox" id="optMinimap" onchange="setSound('minimap', this.checked)" checked> Мини-карта в углу</label>
                 <button class="btn btn-secondary btn-small" onclick="resetTips()">Показать подсказки снова</button>
             </div>
             <div class="setting">
@@ -2638,7 +2714,125 @@
             "💡 Подсказки покажутся снова": "💡 Tips will show again",
             "Подсказки": "Tips",
             "Подсказки для новичка": "Beginner tips",
-            "Показать подсказки снова": "Show tips again"
+            "Показать подсказки снова": "Show tips again",
+            "📅 Шахта дня": "📅 Mine of the day",
+            "у всех сегодня одна шахта: кто быстрее до дна и наверх": "the same mine for everyone today: who’s fastest to the bottom and back",
+            "📅 Шахта дня {0}: спустись до 780 м и вернись наверх — быстрее всех": "📅 Mine of the day, {0}: go down to 780 m and back up — faster than everyone",
+            "⛏️ Шахтёр 1899 · Шахта дня {0}: дно и наверх за {1}, смертей: {2}. Попробуй быстрее: https://z0rd4n0v1ch.github.io/m1899/play/": "⛏️ Miner 1899 · Mine of the day, {0}: bottom and back in {1}, deaths: {2}. Try to beat it: https://z0rd4n0v1ch.github.io/m1899/play/",
+            "📋 Результат скопирован — вставь его другу": "📋 Result copied — paste it to a friend",
+            "📜 Заказ скупщика не выполнен: {0} {1}/{2}": "📜 Trader’s order failed: {0} {1}/{2}",
+            "🌋 Земля дрожит! С потолка сыплются камни": "🌋 The ground shakes! Rocks fall from the ceiling",
+            "📜 Заказ скупщика: {0} ×{1} за 15 минут — заплачу вдвое (+{2} ¤)": "📜 Trader’s order: {0} ×{1} within 15 minutes — double pay (+{2} ¤)",
+            "📜 Заказ выполнен! Скупщик доплатил {0} ¤": "📜 Order done! The trader paid {0} ¤ extra",
+            " · 📜 {0} {1}/{2}, {3} мин": " · 📜 {0} {1}/{2}, {3} min",
+            "Шахта дня {0}": "Mine of the day, {0}",
+            "📤 Поделиться результатом": "📤 Share the result",
+            "📅 Шахта дня {0}": "📅 Mine of the day, {0}",
+            "События: землетрясения и заказы скупщика": "Events: earthquakes and trader’s orders",
+            "Самородок": "Nugget",
+            "Вода": "Water",
+            "🔦 Открытая лампа погасла в воде": "🔦 The open lamp went out in the water",
+            "💧 Воздух кончается — наверх!": "💧 Running out of air — swim up!",
+            "Утонул": "Drowned",
+            "🛤 Поехали! S — сойти": "🛤 Off we go! S — get off",
+            "{0} ¤": "{0} ¤",
+            "лестницы ×5": "ladders ×5",
+            "спички ×10": "matches ×10",
+            "верёвка": "a rope",
+            "бинты ×2": "bandages ×2",
+            "🗺 старая карта: руда вокруг подсвечена на полторы минуты": "🗺 an old map: ore around you is highlighted for a minute and a half",
+            "📦 Сундук старого шахтёра: {0}": "📦 An old miner’s chest: {0}",
+            "🧭 Находки": "🧭 Finds",
+            "Ныряльщик": "Diver",
+            "пробыть под водой 5 секунд": "stay underwater for 5 seconds",
+            "Машинист": "Engine Driver",
+            "прокатиться в вагонетке 20 блоков": "ride a mine cart for 20 blocks",
+            "Кладоискатель": "Treasure Hunter",
+            "найти сундук старого шахтёра": "find an old miner’s chest",
+            "Золотая лихорадка": "Gold Rush",
+            "добыть самородок": "mine a nugget",
+            "🟡 Самородок! Вот это находка": "🟡 A nugget! What a find",
+            "Разведано {0}% шахты · глубже всего: {1} м": "Explored {0}% of the mine · deepest: {1} m",
+            "🧨 Динамита нет — продаётся в лавке": "🧨 No dynamite — the shop sells it",
+            "🧨 На поверхности взрывать нельзя": "🧨 No blasting on the surface",
+            "🧨 Фитиль горит — беги!": "🧨 The fuse is lit — run!",
+            "Динамит": "Dynamite",
+            "💥 Бум! Руда: уцелело {0}, разлетелось {1}": "💥 Boom! Ore: {0} saved, {1} scattered",
+            "💥 Бум!": "💥 Boom!",
+            "🧨 Больше 10 шашек не унести": "🧨 You can’t carry more than 10 sticks",
+            "🧨 Куплена шашка динамита. У тебя: {0}": "🧨 Bought a stick of dynamite. You have: {0}",
+            "🔑 Код не похож на код шахты: M1899-…": "🔑 That doesn’t look like a mine code: M1899-…",
+            "🔑 Шахта {0}": "🔑 Mine {0}",
+            "📋 Код {0} скопирован": "📋 Code {0} copied",
+            "Игр": "Games",
+            "Время в игре": "Time played",
+            "Выкопано блоков": "Blocks dug",
+            "Добыто руды": "Ore mined",
+            "Пройдено": "Walked",
+            "Найдено сундуков": "Chests found",
+            "Проехано в вагонетке": "Mine cart ride",
+            "Взрывов динамита": "Dynamite blasts",
+            "Любимая кирка": "Favourite pickaxe",
+            "Код этой шахты": "This mine’s code",
+            "🧨 Динамит": "🧨 Dynamite",
+            "взрывает круг вокруг себя через 2.5 с — клавиша B · руда уцелеет наполовину · у тебя: {0}": "blasts a circle around you after 2.5 s — the B key · half the ore survives · you have: {0}",
+            "🗺 Карта": "🗺 Map",
+            "📊 Статистика": "📊 Statistics",
+            "🗺 Карта шахты": "🗺 Mine map",
+            "📊 Статистика за всё время": "📊 All-time statistics",
+            "Код шахты: M1899-…": "Mine code: M1899-…",
+            "🔑 Играть по коду": "🔑 Play by code",
+            "Код шахты": "Mine code",
+            "Подрывник": "Blaster",
+            "взорвать шашку динамита": "blow up a stick of dynamite",
+            "Мини-карта в углу": "Mini-map in the corner",
+            "- Поджечь шашку динамита": "- Light a stick of dynamite",
+            "- Карта шахты": "- Mine map",
+            ") - Поджечь шашку динамита": ") - Light a stick of dynamite",
+            ") - Карта шахты": ") - Mine map",
+            "3 марта 1899. Нанялся на шахту «Глубокая» за посёлком. Скупщик Пахомыч платит честно, только ворчит. Говорят, раньше здесь копали до самого жара — потом бросили. Почему — никто не говорит.": "March 3, 1899. Hired on at the “Deep” mine past the village. Pakhomych the trader pays fairly, though he grumbles. They say men once dug down to the very heat — then gave it up. Nobody says why.",
+            "17 марта. Нашёл в глине старую кирку с клеймом «С. Е.». Пахомыч, как увидел, побелел: «Ершова это кирка. Степан первым дошёл до дна». Больше ни слова.": "March 17. Found an old pickaxe in the clay, branded “S. E.”. Pakhomych went pale when he saw it: “That’s Yershov’s. Stepan was the first to reach the bottom.” Not another word.",
+            "2 апреля. В граните пахнет газом. Купил клетку с канарейкой — Варькой. Старики учат: замолчала птица — беги наверх, не оглядываясь.": "April 2. The granite smells of gas. Bought a caged canary — Varka. The old men say: if the bird goes quiet, run up and don’t look back.",
+            "19 апреля. Ниже четырёхсот метров вода стоит в чашах, тёплая, как парное молоко. На дне блестят изумруды. Пока нырял, погасла лампа. Хорошо, что пустая, а не газовая.": "April 19. Below four hundred meters the water stands in basins, warm as fresh milk. Emeralds glint on the bottom. My lamp went out while I was diving. Lucky it was empty there, not gassy.",
+            "8 мая. Нашёл сундук Ершова. В нём — его дневник, мокрый, половина страниц слиплась. Он пишет, что внизу «кто-то живёт в лаве и смотрит».": "May 8. Found Yershov’s chest. His diary is inside, wet, half the pages stuck together. He writes that down below “someone lives in the lava and watches”.",
+            "23 мая. Из записей Ершова: «Платиновая жила — у самой подошвы, в каменном зале. Её стережёт Хозяин. Огненный, большой, как вагонетка. Плюётся пламенем».": "May 23. From Yershov’s notes: “The platinum vein is at the very bottom, in a stone hall. The Master guards it. Fiery, big as a mine cart. It spits flame.”",
+            "11 июня. Земля дрожала всю ночь. Пахомыч говорит — это Хозяин ворочается, когда в шахте шумят. Я не верю. Но в лавку с тех пор он ходит с образком.": "June 11. The ground shook all night. Pakhomych says it’s the Master turning over when the mine is noisy. I don’t believe it. But since then he wears an icon to the shop.",
+            "29 июня. На шестистах метрах жарко так, что сохнет рубаха. Саламандры прячутся в лаве, видно только глаза. Одна плюнула — прожгла рукав.": "June 29. At six hundred meters it’s so hot my shirt dries on me. Salamanders hide in the lava, only their eyes show. One spat — burned through my sleeve.",
+            "14 июля. Ершов, последняя запись: «Иду в зал. Если не вернусь — платина ваша, а Хозяина не будите». Дальше — пусто.": "July 14. Yershov, last entry: “Going to the hall. If I don’t come back, the platinum is yours — just don’t wake the Master.” Then nothing.",
+            "Без даты. Я дошёл до зала и разбудил его. Он пал. В камне — платина, а под ней — кирка «С. Е.», вторая. Отнёс её Пахомычу. Он плакал. Шахту теперь зовут «Ершовской».": "No date. I reached the hall and woke him. He fell. Platinum in the stone, and beneath it — a second “S. E.” pickaxe. I took it to Pakhomych. He wept. Now they call it Yershov’s mine.",
+            "📖 Страница дневника {0} из {1} — открой «📖 Дневник»": "📖 Diary page {0} of {1} — open “📖 Diary”",
+            "Найдено страниц: {0} из {1}": "Pages found: {0} of {1}",
+            "…последняя страница — у самого дна": "…the last page is at the very bottom",
+            "…страница ещё не найдена": "…page not found yet",
+            "👹 Хозяин дна проснулся!": "👹 The Master of the Deep has awoken!",
+            "Хозяин дна": "The Master of the Deep",
+            "👹 Хозяин дна": "👹 The Master of the Deep",
+            "👹 Хозяин дна повержен! +{0} ¤, платина ×{1}": "👹 The Master of the Deep is defeated! +{0} ¤, platinum ×{1}",
+            "Ершовская шахта": "Yershov’s Mine",
+            "победить Хозяина дна": "defeat the Master of the Deep",
+            "Летописец": "Chronicler",
+            "собрать все страницы дневника": "collect all the diary pages",
+            "📖 Дневник": "📖 Diary",
+            "📖 Дневник старого шахтёра": "📖 An old miner’s diary",
+            "нажми клавишу… (Esc — отмена)": "press a key… (Esc — cancel)",
+            "было": "was",
+            "Влево": "Left",
+            "Вправо": "Right",
+            "Вверх / прыжок": "Up / jump",
+            "Вниз": "Down",
+            "Копать / бить": "Dig / hit",
+            "Лавка / вагонетка": "Shop / mine cart",
+            "Лестница": "Ladder",
+            "Верёвка": "Rope",
+            "Переправа": "Rope bridge",
+            "Лечиться": "Heal",
+            "Зажечь лампу": "Light the lamp",
+            "Карта": "Map",
+            "Удобство": "Accessibility",
+            "Для дальтоников: значки на руде (● золото, ○ серебро, ◆ алмаз, ■ изумруд, ▲ рубин, ✚ платина)": "Colour-blind friendly: symbols on ore (● gold, ○ silver, ◆ diamond, ■ emerald, ▲ ruby, ✚ platinum)",
+            "Крупный текст: панели, окна, уведомления": "Large text: panels, windows, notifications",
+            "Свои клавиши": "Custom keys",
+            "Как было": "Reset"
             };
         let LANG = 'ru';
 
@@ -2727,7 +2921,7 @@
             if (typeof updateCamera === 'function' && world.length) updateCamera();
         }
         const SAVE_VERSION = 10;          // 2: размеры мира; 3: рюкзак и деньги; 4: кирка; 5: лопата; 6: лестницы и верёвки; 7: лампы, пояс; 8: характеристики; 9: цель и итоги; 10: режим (хардкор)
-        const GAME_VERSION = '2.4.0';
+        const GAME_VERSION = '2.5.0';
         const AUTOSAVE_INTERVAL = 30000; // 30 секунд
 
         // Физика игрока. Скорости — в блоках в секунду, ускорения — в блоках/с².
@@ -2785,7 +2979,12 @@
             LADDER: 16,      // лестница: сквозь неё можно идти, по ней — лазать
             ROPE: 17,        // верёвка: то же, но спускается сразу на весь колодец
             WEB: 18,         // паутина: сквозь неё можно пройти, но очень медленно
-            BRIDGE: 19       // верёвочная переправа: по ней ходят, S — спрыгнуть вниз
+            BRIDGE: 19,      // верёвочная переправа: по ней ходят, S — спрыгнуть вниз
+            WATER: 20,       // подземное озеро: плыть медленно; в хардкоре можно утонуть
+            RAIL: 21,        // старые рельсы в штольне: сквозь них ходят
+            CART: 22,        // вагонетка на рельсах: E — сесть и покатиться
+            CHEST: 23,       // сундук старых шахтёров: раскопать — находка
+            NUGGET: 24       // самородок золота: редкий и дорогой
         };
 
         // Цвета блоков
@@ -2797,6 +2996,9 @@
             [BLOCK_TYPES.DIAMOND]: '#00FFFF',
             [BLOCK_TYPES.RUBY]: '#FF1493',
             [BLOCK_TYPES.LAVA]: '#DC143C',
+            [BLOCK_TYPES.WATER]: '#2D6FB5',
+            [BLOCK_TYPES.CHEST]: '#7A4A24',
+            [BLOCK_TYPES.NUGGET]: '#E8B923',
             [BLOCK_TYPES.BEDROCK]: '#222222',
             [BLOCK_TYPES.SAND]: '#C2A66B',
             [BLOCK_TYPES.CLAY]: '#A0694B',
@@ -2838,7 +3040,8 @@
             [BLOCK_TYPES.COAL]:     { key: 'coal',     name: L('Уголь'),   price: 4,   score: 5,   weight: 1 },
             [BLOCK_TYPES.SILVER]:   { key: 'silver',   name: L('Серебро'), price: 20,  score: 25,  weight: 1.5 },
             [BLOCK_TYPES.EMERALD]:  { key: 'emerald',  name: L('Изумруд'), price: 35,  score: 75,  weight: 0.5 },
-            [BLOCK_TYPES.PLATINUM]: { key: 'platinum', name: L('Платина'), price: 80,  score: 150, weight: 3 }
+            [BLOCK_TYPES.PLATINUM]: { key: 'platinum', name: L('Платина'), price: 80,  score: 150, weight: 3 },
+            [BLOCK_TYPES.NUGGET]:   { key: 'nugget',   name: L('Самородок'), price: 90, score: 120, weight: 3 }
         };
         const BACKPACK_CAPACITY = 20;    // ёмкость стартового мешка
 
@@ -2868,7 +3071,9 @@
             [BLOCK_TYPES.SILVER]: 0.9,
             [BLOCK_TYPES.EMERALD]: 1.3,
             [BLOCK_TYPES.PLATINUM]: 1.6,
-            [BLOCK_TYPES.LAVA]: 0.3
+            [BLOCK_TYPES.LAVA]: 0.3,
+            [BLOCK_TYPES.CHEST]: 0.5,
+            [BLOCK_TYPES.NUGGET]: 0.9
         };
 
         // Кирки. speed делит время копания, minTier у блока — какая кирка нужна.
@@ -2943,7 +3148,7 @@
         let digState = { x: null, y: null, progress: 0, warned: false };
 
         function emptyBackpack() {
-            return { gold: 0, diamond: 0, ruby: 0, coal: 0, silver: 0, emerald: 0, platinum: 0 };
+            return { gold: 0, diamond: 0, ruby: 0, coal: 0, silver: 0, emerald: 0, platinum: 0, nugget: 0 };
         }
 
         let gameState = {
@@ -3140,7 +3345,85 @@
                 world[SURFACE_Y][x] = BLOCK_TYPES.STONE;
             }
 
+            placeMineFeatures(seed);
             populateCreatures(seed, true);
+            run.bossDefeated = false;
+            spawnBoss();
+        }
+
+        // Озёра, старые штольни с рельсами и вагонеткой, сундуки, самородки.
+        // От зерна мира — у одной шахты всегда одно и то же (важно для «Шахты дня»).
+        function placeMineFeatures(seed) {
+            const rnd = seededRandom((seed ^ 0x5eed1899) >>> 0);
+            const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+            const D = d => DEPTH_ORIGIN + d;
+            const inside = (x, y) => x > 1 && x < WORLD_WIDTH - 2 && y > SURFACE_Y + 3 && y < WORLD_HEIGHT - BEDROCK_ROWS - 1;
+            // старые штольни: горизонтальный проход в 2 клетки, по полу рельсы, в начале — вагонетка
+            for (let t = 0; t < 4; t++) {
+                const y = D(ri(90, 520)), len = ri(22, 40), x0 = ri(4, WORLD_WIDTH - len - 5);
+                for (let x = x0; x < x0 + len; x++) {
+                    world[y - 1][x] = BLOCK_TYPES.AIR;
+                    world[y][x] = BLOCK_TYPES.RAIL;
+                    if (world[y + 1][x] === BLOCK_TYPES.AIR || world[y + 1][x] === BLOCK_TYPES.LAVA) world[y + 1][x] = BLOCK_TYPES.STONE;
+                }
+                world[y][x0 + 1] = BLOCK_TYPES.CART;
+            }
+            // озёра в Глиняных штольнях и Гранитных недрах: пустую чашу заполняет вода
+            let lakes = 0;
+            for (let tries = 0; tries < 400 && lakes < 7; tries++) {
+                const x = ri(3, WORLD_WIDTH - 4), y = D(ri(210, 590));
+                if (!inside(x, y) || world[y][x] !== BLOCK_TYPES.AIR || world[y + 1][x] === BLOCK_TYPES.AIR) continue;
+                const level = y - ri(1, 3);                       // уровень воды
+                const fill = [], seen = new Set(), stack = [[x, y]];
+                let leak = false;
+                while (stack.length && !leak) {
+                    const [cx, cy] = stack.pop(), k = cy * WORLD_WIDTH + cx;
+                    if (seen.has(k)) continue;
+                    seen.add(k);
+                    if (!inside(cx, cy) || cy < level) continue;
+                    const b = world[cy][cx];
+                    if (b !== BLOCK_TYPES.AIR) continue;
+                    fill.push([cx, cy]);
+                    if (fill.length > 160) { leak = true; break; }   // не чаша — вода бы утекла
+                    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+                if (leak || fill.length < 8) continue;
+                for (const [fx, fy] of fill) world[fy][fx] = BLOCK_TYPES.WATER;
+                // на дне — руда побогаче
+                for (const [fx, fy] of fill) {
+                    const fd = fy + 1 - DEPTH_ORIGIN;              // особая руда — не выше своей глубины
+                    const ore = fd >= GEN.specialFrom.EMERALD ? BLOCK_TYPES.EMERALD : (fd >= GEN.specialFrom.SILVER && fd < 400) ? BLOCK_TYPES.SILVER : BLOCK_TYPES.GOLD;   // серебро — только в глине
+                    if (world[fy + 1][fx] !== BLOCK_TYPES.WATER && world[fy + 1][fx] !== BLOCK_TYPES.BEDROCK && rnd() < 0.35)
+                        world[fy + 1][fx] = ore;
+                }
+                lakes++;
+            }
+            // сундуки старых шахтёров — в пещерах, на полу
+            let chests = 0;
+            for (let tries = 0; tries < 2000 && chests < 9; tries++) {
+                const x = ri(2, WORLD_WIDTH - 3), y = D(ri(40, 760));
+                if (!inside(x, y) || world[y][x] !== BLOCK_TYPES.AIR) continue;
+                const below = world[y + 1][x];
+                if (below === BLOCK_TYPES.AIR || below === BLOCK_TYPES.LAVA || below === BLOCK_TYPES.WATER || below === BLOCK_TYPES.RAIL) continue;
+                world[y][x] = BLOCK_TYPES.CHEST;
+                chests++;
+            }
+            // самородки — в песке и глине
+            let nuggets = 0;
+            for (let tries = 0; tries < 2000 && nuggets < 6; tries++) {
+                const x = ri(2, WORLD_WIDTH - 3), y = D(ri(15, 380));
+                const b = world[y] && world[y][x];
+                if (b === BLOCK_TYPES.SAND || b === BLOCK_TYPES.CLAY || b === BLOCK_TYPES.STONE) { world[y][x] = BLOCK_TYPES.NUGGET; nuggets++; }
+            }
+            // зал Хозяина дна: у подошвы шахты, стены — платиновая жила
+            const ax = ri(20, WORLD_WIDTH - 36), ay = D(764);
+            for (let y = ay - 4; y <= ay + 1; y++) for (let x = ax - 1; x <= ax + 15; x++) {
+                if (y === ay + 1) world[y][x] = BLOCK_TYPES.STONE;                       // пол
+                else if (x === ax - 1 || x === ax + 15 || y === ay - 4) world[y][x] = rnd() < 0.45 ? BLOCK_TYPES.PLATINUM : BLOCK_TYPES.STONE;
+                else world[y][x] = BLOCK_TYPES.AIR;
+            }
+            bossHome = { x: ax + 9, y: ay };
+            return { lakes, chests, nuggets };
         }
 
         // Получить блок
@@ -3170,7 +3453,14 @@
             const block = getBlock(x, y);
             return block !== BLOCK_TYPES.AIR && block !== BLOCK_TYPES.LAVA &&
                    block !== BLOCK_TYPES.LADDER && block !== BLOCK_TYPES.ROPE && block !== BLOCK_TYPES.WEB &&
-                   block !== BLOCK_TYPES.BRIDGE;
+                   block !== BLOCK_TYPES.BRIDGE && block !== BLOCK_TYPES.WATER &&
+                   block !== BLOCK_TYPES.RAIL && block !== BLOCK_TYPES.CART;
+        }
+
+        // Клетки, сквозь которые видно пещеру (фон рисуется как у пустоты)
+        function isSeeThrough(block) {
+            return isClimbable(block) || block === BLOCK_TYPES.WEB || block === BLOCK_TYPES.RAIL ||
+                   block === BLOCK_TYPES.CART || block === BLOCK_TYPES.WATER || block === BLOCK_TYPES.CHEST;
         }
 
         function isClimbable(block) {
@@ -3611,7 +3901,8 @@
             if (fallTop !== null) {
                 const drop = player.y - fallTop;
                 fallTop = null;
-                if (drop > 1.5) sfx('land');
+                if (drop > 1.5 && !inWater()) sfx('land');
+                if (inWater()) return;                       // в воду — мягко
                 if (drop > SAFE_FALL) {
                     if (lampShines() && LAMPS[lampTier].open) {
                         lampLit = false;
@@ -3630,9 +3921,13 @@
         function updatePlayer(dt) {
             if (gameState.paused) return;
             if (debug.on && debug.fly) { updateFly(dt); fallTop = null; return; }
+            if (updateCart(dt)) return;                     // едет в вагонетке
 
             // Управление (используем e.code для работы на любой раскладке)
-            const speed = (isSprinting() ? MOVE_SPEED * SPRINT_MULT : MOVE_SPEED) * walkFactor();
+            const swimming = inWater();
+            const speed = (isSprinting() ? MOVE_SPEED * SPRINT_MULT : MOVE_SPEED) * walkFactor() * (swimming ? SWIM_SLOW : 1);
+            // в воде W — всплывать
+            if (swimming && (keys['KeyW'] || keys['ArrowUp']) && !keys['Space']) player.vy = -SWIM_UP;
             if (keys['KeyA'] || keys['ArrowLeft']) {
                 player.vx = -speed;
                 player.direction = -1;
@@ -3694,7 +3989,9 @@
             // Гравитация с учётом времени кадра. Смещение считается по средней
             // скорости за кадр — так высота прыжка не зависит от частоты кадров.
             const vy0 = player.vy;
-            player.vy = Math.min(player.vy + GRAVITY * dt, MAX_FALL_SPEED);
+            const wet = getBlock(player.x + PLAYER_W / 2, player.y + 0.5) === BLOCK_TYPES.WATER;
+            player.vy = wet ? Math.min(player.vy + GRAVITY * WATER_GRAVITY * dt, WATER_MAX_FALL)   // в воде — медленно тонет
+                            : Math.min(player.vy + GRAVITY * dt, MAX_FALL_SPEED);
             const newY = player.y + (vy0 + player.vy) / 2 * dt;
             const left = player.x, right = player.x + PLAYER_W;
 
@@ -3821,6 +4118,9 @@
         }
 
         function die(reason) {
+            if (cartRide) dismountCart();
+            if (!run.debugUsed) life.deaths++;
+            breath = BREATH_MAX;
             run.deaths++;
             sfx('death');
             trip.maxDepth = 0; trip.gear = true;   // смерть — не «выбрался сам»
@@ -4457,6 +4757,7 @@
 
         // Удар: возвращает true, если пробел ушёл на удар, а не на копание
         function tryAttack() {
+            if (hitBoss()) return true;
             const c = creatureInReach();
             if (!c) return false;
             if (hitCooldown > 0) return true;
@@ -4472,6 +4773,7 @@
         function killCreature(c) {
             c.hp = 0;
             run.kills++;
+            if (!run.debugUsed) life.kills++;
             sfx('squash');
             if (c.type === 'rat') countUp('rat');
             if (c.type === 'spider') countUp('spider');
@@ -4680,7 +4982,7 @@
         function backpackValue() {
             let total = 0;
             for (const type in ORES) {
-                total += backpack[ORES[type].key] * ORES[type].price;
+                total += (backpack[ORES[type].key] || 0) * ORES[type].price;
             }
             return total;
         }
@@ -4767,13 +5069,14 @@
         // опасные твари, темнота без лампы.
         const HC_SCORE_MULT = 1.5;
         const HC_FIERCE_MULT = 1.5;
-        const mode = { hardcore: false, variant: 'oneLife', noRegen: false, noCage: false, fierce: false, dark: false };
+        const mode = { hardcore: false, variant: 'oneLife', noRegen: false, noCage: false, fierce: false, dark: false, daily: null };
         let gameOver = false;
 
         function scoreMult() { return mode.hardcore ? HC_SCORE_MULT : 1; }
         function addScore(n) { stats.score += Math.round(n * scoreMult()); }
 
         function modeTitle() {
+            if (mode.daily) return L`📅 Шахта дня ${dailyLabel(mode.daily)}`;
             if (!mode.hardcore) return L('Обычная игра');
             const extra = [mode.noRegen && L('без лечения'), mode.noCage && L('без клети'), mode.fierce && L('злые твари'), mode.dark && L('темнота')].filter(Boolean);
             return L`💀 Хардкор: ${mode.variant === 'oneLife' ? L('одна жизнь') : L('суровый')}${extra.length ? ' · ' + extra.join(', ') : ''}`;
@@ -4795,6 +5098,7 @@
         function chooseMode(hardcore, options) {
             const o = options || {};
             Object.assign(mode, {
+                daily: null,
                 hardcore: !!hardcore,
                 variant: o.variant === 'harsh' ? 'harsh' : 'oneLife',
                 noRegen: !!(hardcore && o.noRegen), noCage: !!(hardcore && o.noCage),
@@ -4875,7 +5179,14 @@
             { id: 'spiders',     group: L('🐀 Твари'),     name: L('Гроза пауков'),            text: L('победить 10 пауков'), counter: 'spider', need: 10 },
             { id: 'salamander',  group: L('🐀 Твари'),     name: L('Укротитель огня'),         text: L('победить саламандру') },
             { id: 'gasSurvivor', group: L('💀 Риск'),      name: L('Пережил газ'),             text: L('выжить во взрыве рудничного газа') },
-            { id: 'ironMiner',   group: L('💀 Риск'),      name: L('Железный шахтёр'),         text: L('выполнить цель в хардкоре «Одна жизнь»') }
+            { id: 'ironMiner',   group: L('💀 Риск'),      name: L('Железный шахтёр'),         text: L('выполнить цель в хардкоре «Одна жизнь»') },
+            { id: 'diver',       group: L('🧭 Находки'),   name: L('Ныряльщик'),               text: L('пробыть под водой 5 секунд') },
+            { id: 'machinist',   group: L('🧭 Находки'),   name: L('Машинист'),                text: L('прокатиться в вагонетке 20 блоков') },
+            { id: 'treasure',    group: L('🧭 Находки'),   name: L('Кладоискатель'),           text: L('найти сундук старого шахтёра') },
+            { id: 'goldrush',    group: L('🧭 Находки'),   name: L('Золотая лихорадка'),       text: L('добыть самородок') },
+            { id: 'blaster',     group: L('🧭 Находки'),   name: L('Подрывник'),               text: L('взорвать шашку динамита') },
+            { id: 'bossSlayer',  group: L('💀 Риск'),      name: L('Ершовская шахта'),         text: L('победить Хозяина дна') },
+            { id: 'chronicler',  group: L('🧭 Находки'),   name: L('Летописец'),               text: L('собрать все страницы дневника') }
         ];
         const ach = { got: {}, counters: {} };     // got: id → дата получения (мс)
         // для «Ступенька за ступенькой»: самая большая глубина и было ли снаряжение в этом походе
@@ -4936,6 +5247,8 @@
         // Добыта руда (положена в рюкзак)
         function onOreMined(block) {
             unlock('firstOre');
+            life.ore++;
+            if (block === BLOCK_TYPES.NUGGET) { unlock('goldrush'); showNotification(L('🟡 Самородок! Вот это находка')); }
             if (block === BLOCK_TYPES.DIAMOND) unlock('diamond');
             if (block === BLOCK_TYPES.EMERALD) unlock('emerald');
             if (block === BLOCK_TYPES.PLATINUM) unlock('platinum');
@@ -4968,6 +5281,683 @@
             gameState.paused = false;
         }
 
+
+
+
+
+
+        // ============ УДОБСТВО: ДАЛЬТОНИКИ, КРУПНЫЙ ТЕКСТ, СВОИ КЛАВИШИ ============
+        // Палитра для дальтоников: на руде — значок формы, чтобы различать не только по цвету
+        // (рубин и лава, изумруд и золото…).
+        const ORE_GLYPH = {
+            [BLOCK_TYPES.COAL]: '▬', [BLOCK_TYPES.GOLD]: '●', [BLOCK_TYPES.SILVER]: '○', [BLOCK_TYPES.DIAMOND]: '◆',
+            [BLOCK_TYPES.EMERALD]: '■', [BLOCK_TYPES.RUBY]: '▲', [BLOCK_TYPES.PLATINUM]: '✚', [BLOCK_TYPES.LAVA]: '≈', [BLOCK_TYPES.WATER]: '~'
+        };
+        function drawOreGlyph(block, x, y) {
+            if (settings.palette !== 'cb' || !ORE_GLYPH[block]) return false;
+            ctx.save();
+            ctx.font = `bold ${Math.round(TILE_SIZE * 0.7)}px sans-serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fillText(ORE_GLYPH[block], x + TILE_SIZE / 2 + 1, y + TILE_SIZE / 2 + 1);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(ORE_GLYPH[block], x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+            ctx.restore();
+            return true;
+        }
+
+        // Свои клавиши: действие → клавиша. Нажатие своей клавиши работает как исходная;
+        // исходная тоже остаётся, если её не заняли под другое действие.
+        const REMAP_ACTIONS = [
+            ['KeyA', L('Влево')], ['KeyD', L('Вправо')], ['KeyW', L('Вверх / прыжок')], ['KeyS', L('Вниз')], ['Space', L('Копать / бить')],
+            ['ShiftLeft', L('Бег')], ['KeyE', L('Лавка / вагонетка')], ['KeyQ', L('Лестница')], ['KeyR', L('Верёвка')], ['KeyT', L('Переправа')],
+            ['KeyC', L('Клеть')], ['KeyH', L('Лечиться')], ['KeyL', L('Зажечь лампу')], ['KeyB', L('Динамит')], ['KeyN', L('Карта')],
+            ['KeyM', L('Радио')], ['KeyV', L('Видео')], ['KeyP', L('Персонаж')]
+        ];
+        let remapWaiting = null;
+        function keyName(code) {
+            if (!code) return '—';
+            if (code === 'Space') return L('Пробел');
+            if (code.startsWith('Key')) return code.slice(3);
+            if (code.startsWith('Digit')) return code.slice(5);
+            if (code.startsWith('Arrow')) return { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }[code];
+            if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift';
+            return code;
+        }
+        // Какая исходная клавиша стоит за нажатой
+        function mappedCode(code) {
+            const km = settings.keymap || {};
+            for (const [def, mine] of Object.entries(km)) if (mine === code) return def;
+            // исходную клавишу заняли под другое действие — она больше не работает «по-старому»
+            if (Object.values(km).includes(code)) return null;
+            return code;
+        }
+        function remapEvent(e) {
+            const m = mappedCode(e.code);
+            if (m === e.code) return e;
+            return { code: m || 'Unidentified', key: e.key, repeat: e.repeat, target: e.target, preventDefault: () => e.preventDefault && e.preventDefault() };
+        }
+        function startRemap(def) { remapWaiting = def; renderKeymap(); return true; }
+        function finishRemap(code) {
+            if (!remapWaiting) return false;
+            if (code === 'Escape') { remapWaiting = null; renderKeymap(); return true; }
+            const km = Object.assign({}, settings.keymap || {});
+            for (const k of Object.keys(km)) if (km[k] === code) delete km[k];      // клавиша могла быть у другого действия
+            if (code === remapWaiting) delete km[remapWaiting]; else km[remapWaiting] = code;
+            settings.keymap = km; saveSettings();
+            remapWaiting = null; renderKeymap();
+            return true;
+        }
+        function resetKeymap() { settings.keymap = {}; saveSettings(); remapWaiting = null; renderKeymap(); return true; }
+        function renderKeymap() {
+            const box = document.getElementById('keymapList');
+            if (!box) return;
+            const km = settings.keymap || {};
+            box.innerHTML = REMAP_ACTIONS.map(([def, name]) => {
+                const mine = km[def];
+                const label = remapWaiting === def ? L('нажми клавишу… (Esc — отмена)') : (mine ? keyName(mine) + ' · ' + L('было') + ' ' + keyName(def) : keyName(def));
+                return '<div class="keymap-row"><span>' + escapeHtml(L(name)) + '</span><button class="btn btn-small' + (remapWaiting === def ? ' chosen' : '') +
+                    '" onclick="startRemap(\'' + def + '\')">' + escapeHtml(label) + '</button></div>';
+            }).join('');
+        }
+
+        // ============ ДНЕВНИК СТАРОГО ШАХТЁРА ============
+        // 10 страниц истории шахты. Страницы 1–9 — в сундуках, 10-я — у Хозяина дна.
+        // Собираются за все игры (хранятся в браузере), как достижения.
+        const DIARY_KEY = 'miner_diary';
+        const DIARY = [
+            L("3 марта 1899. Нанялся на шахту «Глубокая» за посёлком. Скупщик Пахомыч платит честно, только ворчит. Говорят, раньше здесь копали до самого жара — потом бросили. Почему — никто не говорит."),
+            L("17 марта. Нашёл в глине старую кирку с клеймом «С. Е.». Пахомыч, как увидел, побелел: «Ершова это кирка. Степан первым дошёл до дна». Больше ни слова."),
+            L("2 апреля. В граните пахнет газом. Купил клетку с канарейкой — Варькой. Старики учат: замолчала птица — беги наверх, не оглядываясь."),
+            L("19 апреля. Ниже четырёхсот метров вода стоит в чашах, тёплая, как парное молоко. На дне блестят изумруды. Пока нырял, погасла лампа. Хорошо, что пустая, а не газовая."),
+            L("8 мая. Нашёл сундук Ершова. В нём — его дневник, мокрый, половина страниц слиплась. Он пишет, что внизу «кто-то живёт в лаве и смотрит»."),
+            L("23 мая. Из записей Ершова: «Платиновая жила — у самой подошвы, в каменном зале. Её стережёт Хозяин. Огненный, большой, как вагонетка. Плюётся пламенем»."),
+            L("11 июня. Земля дрожала всю ночь. Пахомыч говорит — это Хозяин ворочается, когда в шахте шумят. Я не верю. Но в лавку с тех пор он ходит с образком."),
+            L("29 июня. На шестистах метрах жарко так, что сохнет рубаха. Саламандры прячутся в лаве, видно только глаза. Одна плюнула — прожгла рукав."),
+            L("14 июля. Ершов, последняя запись: «Иду в зал. Если не вернусь — платина ваша, а Хозяина не будите». Дальше — пусто."),
+            L("Без даты. Я дошёл до зала и разбудил его. Он пал. В камне — платина, а под ней — кирка «С. Е.», вторая. Отнёс её Пахомычу. Он плакал. Шахту теперь зовут «Ершовской».")
+        ];
+        let diary = [];
+        try { const d = JSON.parse(localStorage.getItem(DIARY_KEY) || '[]'); diary = Array.isArray(d) ? d.filter(i => Number.isInteger(i) && i >= 0 && i < DIARY.length) : []; } catch (e) { diary = []; }
+        function findPage(i) {
+            if (diary.includes(i) || run.debugUsed) return false;
+            diary.push(i);
+            safeSetItem(DIARY_KEY, JSON.stringify(diary));
+            showNotification(L`📖 Страница дневника ${i + 1} из ${DIARY.length} — открой «📖 Дневник»`, 6000);
+            if (diary.length >= DIARY.length) unlock('chronicler');
+            return true;
+        }
+        // В сундуке — следующая из ненайденных страниц 1–9 (с шансом 60 %)
+        function chestPage() {
+            const next = [...Array(DIARY.length - 1).keys()].find(i => !diary.includes(i));
+            if (next !== undefined && Math.random() < 0.6) return findPage(next);
+            return false;
+        }
+        function openDiary() {
+            gameState.paused = true;
+            const box = document.getElementById('diaryInfo');
+            box.innerHTML = `<div class="ach-total">${L`Найдено страниц: ${diary.length} из ${DIARY.length}`}</div>` +
+                DIARY.map((t, i) => diary.includes(i)
+                    ? `<div class="diary-page"><b>${i + 1}.</b> ${escapeHtml(L(t))}</div>`
+                    : '<div class="diary-page locked"><b>' + (i + 1) + '.</b> ' + (i === DIARY.length - 1 ? L('…последняя страница — у самого дна') : L('…страница ещё не найдена')) + '</div>').join('');
+            document.getElementById('diaryModal').classList.add('active');
+        }
+        function closeDiary() { document.getElementById('diaryModal').classList.remove('active'); gameState.paused = false; }
+
+        // ============ ХОЗЯИН ДНА ============
+        // Огромная огненная саламандра в каменном зале у подошвы шахты (~765 м), стережёт
+        // платиновую жилу. Просыпается, когда подходишь; ползёт к тебе, плюётся пламенем,
+        // обжигает при касании. Побеждён — платина, монеты и последняя страница дневника.
+        const BOSS = { hp: 40, speed: 1.6, spitEvery: 2.0, touch: 25, reward: 400 };
+        let boss = null, bossHome = null;
+        function spawnBoss() {
+            boss = null;
+            if (!bossHome || run.bossDefeated) return;
+            boss = { x: bossHome.x, y: bossHome.y - 1, hp: BOSS.hp, awake: false, spit: BOSS.spitEvery, bite: 0, hurt: 0, dir: -1 };
+        }
+        function bossBox() { return { x: boss.x, y: boss.y, w: 2, h: 2 }; }
+        function updateBoss(dt) {
+            if (!boss || boss.hp <= 0) return;
+            const dx = player.x + PLAYER_W / 2 - (boss.x + 1), dy = player.y + 0.5 - (boss.y + 1);
+            const dist = Math.hypot(dx, dy);
+            if (!boss.awake) {
+                if (dist < 12) { boss.awake = true; showNotification(L('👹 Хозяин дна проснулся!'), 4000); sfx('boom'); shakeTime = Math.max(shakeTime, 1); buzz('heavy'); }
+                return;
+            }
+            boss.hurt = Math.max(0, boss.hurt - dt);
+            boss.bite = Math.max(0, boss.bite - dt);
+            boss.dir = dx < 0 ? -1 : 1;
+            // ползёт по полу зала к игроку, в стены не лезет
+            const nx = boss.x + boss.dir * BOSS.speed * dt * (mode.fierce ? HC_FIERCE_MULT : 1);
+            const edge = boss.dir > 0 ? nx + 2 : nx;
+            if (!isBlocked(edge, boss.y + 0.2) && !isBlocked(edge, boss.y + 1.8) && Math.abs(dx) > 0.8) boss.x = nx;
+            // плевок пламенем
+            boss.spit -= dt;
+            if (boss.spit <= 0 && dist < 16) {
+                boss.spit = BOSS.spitEvery;
+                const sx = boss.x + 1, sy = boss.y + 0.6, dd = Math.max(0.1, dist);
+                fireballs.push({ x: sx, y: sy, vx: dx / dd * FIREBALL_SPEED, vy: (dy - 0.4) / dd * FIREBALL_SPEED, life: 3 });
+                sfx('spit');
+            }
+            // касание обжигает
+            const pb = { x: player.x, y: player.y, w: PLAYER_W, h: 1 };
+            if (boss.bite <= 0 && boxesOverlap(bossBox(), pb)) { boss.bite = 1.2; damage(BOSS.touch * (mode.fierce ? HC_FIERCE_MULT : 1), L('Хозяин дна')); }
+        }
+        // Удар киркой по Хозяину (из tryAttack)
+        function hitBoss() {
+            if (!boss || boss.hp <= 0 || !boss.awake) return false;
+            const reach = player.direction > 0
+                ? { x: player.x + PLAYER_W - 0.1, y: player.y - 0.3, w: HIT_REACH + 0.1, h: 1.6 }
+                : { x: player.x - HIT_REACH, y: player.y - 0.3, w: HIT_REACH + 0.1, h: 1.6 };
+            if (!boxesOverlap(bossBox(), reach)) return false;
+            if (hitCooldown > 0) return true;
+            hitCooldown = HIT_COOLDOWN;
+            boss.hp -= PICK_DAMAGE[pickaxeTier] * hitMult();
+            boss.hurt = 0.15;
+            sfx('hit', 'hard');
+            if (boss.hp <= 0) defeatBoss();
+            return true;
+        }
+        function defeatBoss() {
+            boss.hp = 0;
+            run.bossDefeated = true;
+            stats.money += BOSS.reward; run.earned += BOSS.reward;
+            let plat = 0;
+            for (let i = 0; i < 5; i++) if (addToBackpack(BLOCK_TYPES.PLATINUM) !== 'full') plat++;
+            showNotification(L`👹 Хозяин дна повержен! +${BOSS.reward} ¤, платина ×${plat}`, 7000);
+            sfx('fanfare'); shakeTime = Math.max(shakeTime, 1.2);
+            unlock('bossSlayer');
+            if (!run.debugUsed) life.kills++;
+            findPage(DIARY.length - 1);
+            updateUI();
+        }
+        function renderBoss() {
+            if (!boss || boss.hp <= 0) return;
+            const T = TILE_SIZE, x = (boss.x - camera.x) * T, y = (boss.y - camera.y) * T;
+            const t = typeof hazardClock === 'number' ? hazardClock : 0;
+            ctx.save();
+            if (boss.hurt > 0 && (Math.floor(t * 20) & 1)) ctx.globalAlpha = 0.4;
+            const c = spriteFrame('boss', Math.floor(t * 4) & 1, Math.max(8, Math.round(2 * T * ZOOM * RENDER_SCALE)));
+            if (c) {
+                if (boss.dir > 0) { ctx.translate(x + 2 * T, y); ctx.scale(-1, 1); ctx.drawImage(c, 0, 0, 2 * T, 2 * T); }
+                else ctx.drawImage(c, x, y, 2 * T, 2 * T);
+            } else { ctx.fillStyle = '#b8481a'; ctx.fillRect(x, y + T * 0.6, 2 * T, T * 1.4); }
+            ctx.restore();
+        }
+        // Полоска здоровья Хозяина вверху экрана
+        function renderBossBar() {
+            if (!boss || boss.hp <= 0 || !boss.awake) return;
+            const w = Math.min(360, LW - 40), x = (LW - w) / 2, y = touchMode ? 40 : 14;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x - 4, y - 4, w + 8, 26);
+            ctx.fillStyle = '#5a1a0a'; ctx.fillRect(x, y + 10, w, 8);
+            ctx.fillStyle = '#ff5a1a'; ctx.fillRect(x, y + 10, w * boss.hp / BOSS.hp, 8);
+            ctx.fillStyle = '#ffd27f'; ctx.font = 'bold 11px "Courier New", monospace'; ctx.textAlign = 'center';
+            ctx.fillText(L('👹 Хозяин дна'), LW / 2, y + 7);
+            ctx.restore();
+        }
+
+        // ============ МИНИ-КАРТА ============
+        // Карта того, где ты уже был: в углу — окрестности, по N (Т) — вся шахта.
+        let seen = new Uint8Array(WORLD_WIDTH * WORLD_HEIGHT);
+        let seenAt = -1;
+        function markSeen() {
+            const px = Math.floor(player.x + PLAYER_W / 2), py = Math.floor(player.y + 0.5);
+            const k = py * WORLD_WIDTH + px;
+            if (k === seenAt) return;
+            seenAt = k;
+            const R = 6;
+            for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+                if (dx * dx + dy * dy > R * R) continue;
+                const x = px + dx, y = py + dy;
+                if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) seen[y * WORLD_WIDTH + x] = 1;
+            }
+        }
+        function seenToRuns() {                        // для сохранения: длины серий 0/1
+            const out = []; let cur = 0, n = 0;
+            for (let i = 0; i < seen.length; i++) { if (seen[i] === cur) n++; else { out.push(n); cur = seen[i]; n = 1; } }
+            out.push(n); return out;
+        }
+        function seenFromRuns(runs) {
+            seen = new Uint8Array(WORLD_WIDTH * WORLD_HEIGHT); seenAt = -1;
+            if (!Array.isArray(runs)) return;
+            let i = 0, v = 0;
+            for (const n of runs) { const m = Math.max(0, Math.min(Number(n) || 0, seen.length - i)); if (v) seen.fill(1, i, i + m); i += m; v ^= 1; if (i >= seen.length) break; }
+        }
+        function mapColor(b, x, y) {
+            if (b === BLOCK_TYPES.AIR) return y < SURFACE_Y ? '#87CEEB' : '#2a2320';
+            if (b === BLOCK_TYPES.STONE) return BIOMES[biomeAtBlock(x, y)].rock;
+            if (b === BLOCK_TYPES.CHEST) return '#c8a165';
+            if (b === BLOCK_TYPES.RAIL || b === BLOCK_TYPES.CART) return '#9aa0a6';
+            if (isClimbable(b)) return '#a8743f';
+            return BLOCK_COLORS[b] || '#555';
+        }
+        // Маленькая карта в углу (экранные пиксели)
+        function renderMiniMap() {
+            if (!settings.minimap || gameState.paused) return;
+            const W = 60, H = 40, S = touchMode ? 1.5 : 2;
+            const ox = 8, oy = touchMode ? 44 : 8;
+            const cx = Math.floor(player.x), cy = Math.floor(player.y);
+            ctx.save();
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = '#000'; ctx.fillRect(ox - 2, oy - 2, W * S + 4, H * S + 4);
+            for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                const wx = cx - W / 2 + x, wy = cy - H / 2 + y;
+                if (wx < 0 || wx >= WORLD_WIDTH || wy < 0 || wy >= WORLD_HEIGHT || !seen[wy * WORLD_WIDTH + wx]) continue;
+                ctx.fillStyle = mapColor(world[wy][wx], wx, wy);
+                ctx.fillRect(ox + x * S, oy + y * S, S, S);
+            }
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(ox + W / 2 * S - 1, oy + H / 2 * S - 1, S + 2, S + 2);
+            ctx.strokeStyle = '#ffa500'; ctx.strokeRect(ox - 2, oy - 2, W * S + 4, H * S + 4);
+            ctx.restore();
+        }
+        // Вся шахта — в окне
+        function openBigMap() {
+            gameState.paused = true;
+            const c = document.getElementById('bigMap');
+            const g = c && c.getContext && c.getContext('2d');
+            if (g && g.createImageData) {
+                c.width = WORLD_WIDTH; c.height = WORLD_HEIGHT;
+                const img = g.createImageData(WORLD_WIDTH, WORLD_HEIGHT);
+                for (let y = 0; y < WORLD_HEIGHT; y++) for (let x = 0; x < WORLD_WIDTH; x++) {
+                    const i = (y * WORLD_WIDTH + x) * 4;
+                    if (!seen[y * WORLD_WIDTH + x]) { img.data[i + 3] = 255; continue; }
+                    const col = mapColor(world[y][x], x, y), n = parseInt(col.slice(1), 16);
+                    img.data[i] = n >> 16; img.data[i + 1] = (n >> 8) & 255; img.data[i + 2] = n & 255; img.data[i + 3] = 255;
+                }
+                g.putImageData(img, 0, 0);
+                g.fillStyle = '#fff'; g.fillRect(Math.floor(player.x) - 1, Math.floor(player.y) - 1, 3, 3);
+                g.fillStyle = '#ffa500'; g.fillRect(SHOP_X, SURFACE_Y - 3, SHOP_WIDTH, 3);
+            }
+            const pct = Math.round(seen.reduce((a, b) => a + b, 0) / seen.length * 100);
+            const info = document.getElementById('bigMapInfo');
+            if (info) info.textContent = L`Разведано ${pct}% шахты · глубже всего: ${run.maxDepth} м`;
+            document.getElementById('mapModal').classList.add('active');
+            const wrap = document.getElementById('bigMapWrap');
+            if (wrap) wrap.scrollTop = Math.max(0, player.y * 3 - 200);
+        }
+        function closeBigMap() { document.getElementById('mapModal').classList.remove('active'); gameState.paused = false; }
+
+        // ============ ДИНАМИТ ============
+        // Шашка ставится под ноги и взрывается через 2.5 с: выбивает круг радиусом 1.5 блока.
+        // Руда в зоне взрыва уцелеет только наполовину; рядом с газом — цепной взрыв.
+        const DYNAMITE = { price: 40, fuse: 2.5, radius: 1.6, hurt: 30 };
+        let dynamite = 0, fuses = [];
+        function lightDynamite() {
+            if (dynamite <= 0) { showNotification(L('🧨 Динамита нет — продаётся в лавке')); return false; }
+            if (player.y < SURFACE_Y) { showNotification(L('🧨 На поверхности взрывать нельзя')); return false; }
+            dynamite--;
+            fuses.push({ x: player.x + PLAYER_W / 2, y: player.y + 0.5, t: DYNAMITE.fuse });
+            showNotification(L('🧨 Фитиль горит — беги!'));
+            sfx('match');
+            updateUI();
+            return true;
+        }
+        function updateDynamite(dt) {
+            for (const f of fuses) f.t -= dt;
+            const boom = fuses.filter(f => f.t <= 0);
+            fuses = fuses.filter(f => f.t > 0);
+            for (const f of boom) explodeDynamite(f.x, f.y);
+        }
+        function explodeDynamite(cx, cy) {
+            const R = DYNAMITE.radius;
+            let got = 0, lost = 0, gas = null;
+            for (let y = Math.floor(cy - R); y <= Math.ceil(cy + R); y++) for (let x = Math.floor(cx - R); x <= Math.ceil(cx + R); x++) {
+                if (Math.hypot(x + 0.5 - cx, y + 0.5 - cy) > R) continue;
+                const b = getBlock(x, y);
+                if (b === BLOCK_TYPES.AIR || b === BLOCK_TYPES.BEDROCK || b === BLOCK_TYPES.LAVA || b === BLOCK_TYPES.WATER || y < SURFACE_Y) continue;
+                if (b === BLOCK_TYPES.GAS) gas = [x + 0.5, y + 0.5];
+                if (b === BLOCK_TYPES.CHEST) { openChest(x, y); continue; }
+                if (ORES[b]) { if (Math.random() < 0.5 && addToBackpack(b) !== 'full') got++; else lost++; }
+                setBlock(x, y, BLOCK_TYPES.AIR);
+                stats.blocksBlasted = (stats.blocksBlasted || 0) + 1;
+            }
+            for (const c of creatures) if (Math.hypot(c.x + 0.4 - cx, c.y + 0.5 - cy) < R + 1) killCreature(c);
+            const d = Math.hypot(player.x + PLAYER_W / 2 - cx, player.y + 0.5 - cy);
+            if (d < R + 1) damage(DYNAMITE.hurt * (1 - d / (R + 1.5)), L('Динамит'));
+            shakeTime = Math.max(shakeTime, 0.8);
+            sfx('boom'); buzz('heavy');
+            showNotification(got || lost ? L`💥 Бум! Руда: уцелело ${got}, разлетелось ${lost}` : L('💥 Бум!'));
+            unlock('blaster');
+            life.blasts++;
+            if (gas) gasBlast(gas[0], gas[1]);
+            updateUI();
+        }
+        function buyDynamite() {
+            if (stats.money < DYNAMITE.price) { showNotification(L`💰 Не хватает ${DYNAMITE.price - stats.money} ¤`); return false; }
+            if (dynamite >= 10) { showNotification(L('🧨 Больше 10 шашек не унести')); return false; }
+            stats.money -= DYNAMITE.price; sfx('buy');
+            dynamite++;
+            showNotification(L`🧨 Куплена шашка динамита. У тебя: ${dynamite}`);
+            updateUI(); renderShopList();
+            return true;
+        }
+        function renderFuses() {
+            for (const f of fuses) {
+                const x = (f.x - camera.x) * TILE_SIZE, y = (f.y - camera.y) * TILE_SIZE;
+                ctx.fillStyle = '#c0392b'; ctx.fillRect(x - 3, y - 2, 6, 10);
+                ctx.fillStyle = (Math.floor(f.t * 10) & 1) ? '#ffd23c' : '#ff7a1a';
+                ctx.beginPath(); ctx.arc(x, y - 4, 2.5, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        // ============ ШАХТА ПО КОДУ ============
+        // Код мира — отправь другу, и он сыграет в твою шахту: M1899-XXXXXXX (зерно в base36).
+        function worldCode(seed = worldSeed) { return 'M1899-' + (seed >>> 0).toString(36).toUpperCase(); }
+        function seedFromCode(code) {
+            const m = String(code || '').trim().toUpperCase().match(/^(?:M1899-)?([0-9A-Z]{1,7})$/);
+            if (!m) return null;
+            const n = parseInt(m[1], 36);
+            return Number.isFinite(n) && n >= 0 && n <= 0xFFFFFFFF ? n >>> 0 : null;
+        }
+        function playByCode() {
+            const inp = document.getElementById('worldCodeInput');
+            const seed = seedFromCode(inp && inp.value);
+            if (seed === null) { showNotification(L('🔑 Код не похож на код шахты: M1899-…')); return false; }
+            worldSeed = seed; generateWorld(seed);
+            player.x = WORLD_WIDTH / 2; player.y = SURFACE_Y - 2; player.vy = 0; fallTop = null;
+            seenFromRuns(null);
+            chooseMode(false);
+            showNotification(L`🔑 Шахта ${worldCode(seed)}`);
+            return true;
+        }
+        function copyWorldCode() {
+            const code = worldCode();
+            if (typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(code).then(() => showNotification(L`📋 Код ${code} скопирован`)).catch(() => {});
+            return code;
+        }
+
+        // ============ СТАТИСТИКА ЗА ВСЁ ВРЕМЯ ============
+        const LIFE_KEY = 'miner_lifetime';
+        const life = { games: 0, playtime: 0, dug: 0, ore: 0, earned: 0, walked: 0, deaths: 0, kills: 0, deepest: 0, chests: 0, cart: 0, blasts: 0, pickaxe: {} };
+        try { Object.assign(life, JSON.parse(localStorage.getItem(LIFE_KEY) || '{}')); } catch (e) { /* пусто */ }
+        for (const k of Object.keys(life)) if (k !== 'pickaxe' && !(Number.isFinite(life[k]) && life[k] >= 0)) life[k] = 0;
+        if (!life.pickaxe || typeof life.pickaxe !== 'object') life.pickaxe = {};
+        let lifeSaveClock = 0;
+        function saveLife() { safeSetItem(LIFE_KEY, JSON.stringify(life)); }
+        function lifeTick(dt) {
+            if (run.debugUsed) return;
+            life.playtime += dt;
+            if (currentDepth() > life.deepest) life.deepest = currentDepth();
+            const pk = PICKAXES[pickaxeTier].name; life.pickaxe[pk] = (life.pickaxe[pk] || 0) + dt;
+            lifeSaveClock -= dt;
+            if (lifeSaveClock <= 0) { lifeSaveClock = 10; saveLife(); }
+        }
+        function openStats() {
+            gameState.paused = true;
+            const fav = Object.entries(life.pickaxe).sort((a, b) => b[1] - a[1])[0];
+            const rows = [
+                [L('Игр'), life.games], [L('Время в игре'), formatTime(life.playtime)], [L('Выкопано блоков'), Math.floor(life.dug)],
+                [L('Добыто руды'), life.ore], [L('Заработано'), Math.floor(life.earned).toLocaleString(LOCALE()) + ' ¤'], [L('Пройдено'), Math.floor(life.walked).toLocaleString(LOCALE()) + ' ' + L('м')],
+                [L('Глубже всего'), life.deepest + ' ' + L('м')], [L('Смертей'), life.deaths], [L('Побеждено тварей'), life.kills],
+                [L('Найдено сундуков'), life.chests], [L('Проехано в вагонетке'), Math.floor(life.cart) + ' ' + L('м')], [L('Взрывов динамита'), life.blasts],
+                [L('Любимая кирка'), fav ? L(fav[0]) : '—']
+            ];
+            document.getElementById('statsInfo').innerHTML =
+                '<div class="final-row"><span>' + L('Код этой шахты') + '</span><b>' + worldCode() + ' <button class="btn btn-small" onclick="copyWorldCode()">📋</button></b></div>' +
+                rows.map(([k, v]) => `<div class="final-row"><span>${k}</span><b>${withCoins(String(v))}</b></div>`).join('');
+            document.getElementById('statsModal').classList.add('active');
+        }
+        function closeStats() { document.getElementById('statsModal').classList.remove('active'); gameState.paused = false; }
+
+        // ============ НОВОЕ В ШАХТЕ: ВОДА, ВАГОНЕТКИ, СУНДУКИ, КАРТА ============
+        const SWIM_SLOW = 0.55, WATER_GRAVITY = 0.25, WATER_MAX_FALL = 2.5, SWIM_UP = 3.6;
+        const BREATH_MAX = 8, DROWN_DPS = 12;
+        let breath = BREATH_MAX, underwaterFor = 0, wasInWater = false;
+        function inWater() { return getBlock(player.x + PLAYER_W / 2, player.y + 0.5) === BLOCK_TYPES.WATER; }
+        function headUnderwater() { return getBlock(player.x + PLAYER_W / 2, player.y + 0.15) === BLOCK_TYPES.WATER; }
+
+        // Каждый кадр: воздух, лампа в воде, «Ныряльщик»
+        function updateWater(dt) {
+            const wet = inWater();
+            if (wet && !wasInWater) sfx('splash');
+            wasInWater = wet;
+            if (headUnderwater()) {
+                underwaterFor += dt;
+                if (underwaterFor >= 5) unlock('diver');
+                if (lampTier === 1 && lampLit) { lampLit = false; showNotification(L('🔦 Открытая лампа погасла в воде')); }
+                // утонуть можно только в хардкоре; в обычной игре вода лишь замедляет
+                if (mode.hardcore) {
+                    const before = breath;
+                    breath = Math.max(0, breath - dt);
+                    if (before > 3 && breath <= 3) showNotification(L('💧 Воздух кончается — наверх!'));
+                    if (breath <= 0) damage(DROWN_DPS * dt, L('Утонул'));
+                }
+            } else {
+                underwaterFor = 0;
+                breath = Math.min(BREATH_MAX, breath + dt * 3);
+            }
+        }
+
+        // Пузырьки над головой: сколько осталось воздуха (только в хардкоре)
+        function renderBreath(sx, sy) {
+            if (!mode.hardcore || breath >= BREATH_MAX || !headUnderwater()) return;
+            const n = Math.ceil(breath / BREATH_MAX * 5);
+            ctx.save(); ctx.strokeStyle = '#bfe6ff'; ctx.lineWidth = 1.2;
+            for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.arc(sx + 2 + i * 4, sy - 5, 1.6, 0, Math.PI * 2); ctx.stroke(); }
+            ctx.restore();
+        }
+
+        function drawWater(x, y, wx, wy) {
+            ctx.fillStyle = 'rgba(45, 111, 181, 0.72)';
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            if (getBlock(wx, wy - 1) !== BLOCK_TYPES.WATER) {         // поверхность — светлая полоска с волной
+                const ph = (typeof hazardClock === 'number' ? hazardClock : 0) * 3 + wx;
+                ctx.fillStyle = 'rgba(170, 220, 255, 0.8)';
+                ctx.fillRect(x, y + 1 + Math.sin(ph) * 1, TILE_SIZE, 2);
+            }
+        }
+
+        // ---- вагонетка ----
+        const CART_SPEED = 9;
+        let cartRide = null;                                   // { x, y, dir, dist }
+        function cartNear() {
+            const cy = Math.floor(player.y + 0.5);
+            for (const dx of [0, -1, 1]) {
+                const cx = Math.floor(player.x + PLAYER_W / 2) + dx;
+                if (getBlock(cx, cy) === BLOCK_TYPES.CART) return [cx, cy];
+            }
+            return null;
+        }
+        function mountCart() {
+            const c = cartNear();
+            if (!c || cartRide) return false;
+            setBlock(c[0], c[1], BLOCK_TYPES.RAIL);
+            cartRide = { x: c[0], y: c[1], dir: player.direction || 1, dist: 0 };
+            player.x = c[0] + (1 - PLAYER_W) / 2; player.y = c[1]; player.vx = 0; player.vy = 0; fallTop = null;
+            showNotification(L('🛤 Поехали! S — сойти'));
+            sfx('cart');
+            return true;
+        }
+        function dismountCart() {
+            if (!cartRide) return false;
+            const cx = Math.round(cartRide.x);
+            if (getBlock(cx, cartRide.y) === BLOCK_TYPES.RAIL) setBlock(cx, cartRide.y, BLOCK_TYPES.CART);
+            player.x = cx + (1 - PLAYER_W) / 2; player.y = cartRide.y; player.vy = 0;
+            cartRide = null;
+            return true;
+        }
+        // Движение по рельсам; true — игрок едет (обычное движение в этом кадре не нужно)
+        function updateCart(dt) {
+            if (!cartRide) return false;
+            if (keys['KeyS'] || keys['ArrowDown']) { dismountCart(); return false; }
+            const step = CART_SPEED * dt * cartRide.dir;
+            const nx = cartRide.x + step;
+            const ahead = Math.floor(nx + (cartRide.dir > 0 ? 1 : 0));
+            const b = getBlock(ahead, cartRide.y);
+            if (b !== BLOCK_TYPES.RAIL || isBlocked(ahead, cartRide.y - 1) && getBlock(ahead, cartRide.y - 1) !== BLOCK_TYPES.AIR) {
+                cartRide.x = Math.round(cartRide.x);
+                dismountCart();
+                return false;
+            }
+            cartRide.x = nx; cartRide.dist += Math.abs(step); life.cart += Math.abs(step);
+            if (cartRide.dist >= 20) unlock('machinist');
+            player.x = cartRide.x + (1 - PLAYER_W) / 2; player.y = cartRide.y; player.vx = 0; player.vy = 0; fallTop = null;
+            sfx('cartRoll');
+            return true;
+        }
+
+        // ---- сундук и старая карта ----
+        let mapUntil = 0;
+        function openChest(x, y) {
+            setBlock(x, y, BLOCK_TYPES.AIR);
+            const coins = 30 + Math.floor(Math.random() * 91);
+            stats.money += coins; run.earned += coins;
+            const found = [L`${coins} ¤`];
+            const extras = [
+                () => { ladders = Math.min(MAX_GEAR, ladders + 5); return L('лестницы ×5'); },
+                () => { matches = Math.min(MAX_GEAR, matches + 10); return L('спички ×10'); },
+                () => { ropes = Math.min(MAX_GEAR, ropes + 1); return L('верёвка'); },
+                () => { bandages = Math.min(medLimit('bandage'), bandages + 2); return L('бинты ×2'); }
+            ];
+            for (let i = 0; i < 1 + Math.floor(Math.random() * 2); i++) found.push(extras[Math.floor(Math.random() * extras.length)]());
+            if (Math.random() < 0.2) { mapUntil = stats.playtime + 90; found.push(L('🗺 старая карта: руда вокруг подсвечена на полторы минуты')); }
+            showNotification(L`📦 Сундук старого шахтёра: ${found.join(', ')}`, 6000);
+            unlock('treasure');
+            life.chests++;
+            chestPage();
+            sfx('chest');
+            updateUI();
+        }
+        function mapRevealed(wx, wy, block) {
+            return mapUntil > stats.playtime && ORES[block] !== undefined &&
+                Math.abs(wx - player.x) < 25 && Math.abs(wy - player.y) < 18;
+        }
+
+        // ============ ШАХТА ДНЯ ============
+        // У всех в один день одна и та же шахта (мир строится от даты) и одна цель:
+        // спуститься на дно и вернуться наверх. Обычный режим — чтобы было честно сравнивать.
+        function todayKey(d = new Date()) {
+            const z = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+        }
+        function dailySeed(key) {
+            let h = 2166136261;                                   // FNV-1a от строки даты
+            for (const ch of 'miner1899:' + key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+            return h;
+        }
+        function chooseDaily() {
+            const key = todayKey();
+            Object.assign(mode, { hardcore: false, variant: 'oneLife', noRegen: false, noCage: false, fierce: false, dark: false, daily: key });
+            worldSeed = dailySeed(key);
+            generateWorld(worldSeed);
+            player.x = WORLD_WIDTH / 2; player.y = SURFACE_Y - 2; player.vx = 0; player.vy = 0; fallTop = null;
+            document.getElementById('modeModal').classList.remove('active');
+            Object.assign(goal, { id: 'bottom', amount: 0, done: false });
+            gameState.paused = false;
+            showNotification(L`📅 Шахта дня ${dailyLabel(key)}: спустись до 780 м и вернись наверх — быстрее всех`, 6000);
+            updateUI();
+            return true;
+        }
+        function dailyLabel(key) {
+            const [y, m, d] = key.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString(LOCALE(), { day: 'numeric', month: 'long' });
+        }
+        // Текст результата — поделиться с друзьями
+        function dailyShareText(r) {
+            return L`⛏️ Шахтёр 1899 · Шахта дня ${dailyLabel(r.daily)}: дно и наверх за ${formatTime(r.time)}, смертей: ${r.deaths}. Попробуй быстрее: https://z0rd4n0v1ch.github.io/m1899/play/`;
+        }
+        function shareDaily() {
+            const r = [...records].reverse().find(x => x.daily && x.done);
+            if (!r) return false;
+            const text = dailyShareText(r);
+            const tg = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+            if (tg && typeof tg.openTelegramLink === 'function') {
+                tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent('https://z0rd4n0v1ch.github.io/m1899/play/') + '&text=' + encodeURIComponent(text));
+            } else if (typeof navigator !== 'undefined' && navigator.share) {
+                navigator.share({ text }).catch(() => {});
+            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showNotification(L('📋 Результат скопирован — вставь его другу'))).catch(() => {});
+            }
+            return text;
+        }
+
+        // ============ СОБЫТИЯ ============
+        // Землетрясение: изредка в глубине земля вздрагивает — с потолка вокруг сыплются камни.
+        // Заказ скупщика: в лавке иногда просят принести руду к сроку — за двойную цену.
+        const QUAKE_FIRST = 360;            // с, игрового времени под землёй до первого толчка
+        let quakeIn = QUAKE_FIRST, shakeTime = 0;
+        let order = null, lastOrderAt = 0;
+        function ORES_BY_KEY_OK(k) { return Object.values(ORES).some(o => o.key === k); }
+
+        function updateEvents(dt) {
+            if (!settings.events || gameState.paused) return;
+            if (shakeTime > 0) shakeTime -= dt;
+            // землетрясение — только глубже 60 м
+            if (currentDepth() >= 60) {
+                quakeIn -= dt;
+                if (quakeIn <= 0) { quake(); quakeIn = 300 + Math.random() * 420; }
+            }
+            // заказ: срок вышел
+            if (order && stats.playtime > order.until) {
+                showNotification(L`📜 Заказ скупщика не выполнен: ${L(oreByKey(order.ore).name).toLowerCase()} ${order.got}/${order.need}`, 5000);
+                order = null;
+            }
+        }
+
+        function quake() {
+            shakeTime = 1.6;
+            sfx('cavein'); buzz('heavy');
+            const px = Math.floor(player.x), py = Math.floor(player.y);
+            let fell = 0;
+            for (let tries = 0; tries < 120 && fell < 6; tries++) {
+                const x = px + Math.floor(Math.random() * 31) - 15, y = py + Math.floor(Math.random() * 15) - 9;
+                if (Math.abs(x - px) < 2) continue;                       // не прямо на голову
+                const b = getBlock(x, y);
+                if (![BLOCK_TYPES.STONE, BLOCK_TYPES.CLAY, BLOCK_TYPES.GRAVEL, BLOCK_TYPES.SAND].includes(b) || getBlock(x, y + 1) !== BLOCK_TYPES.AIR) continue;
+                world[y][x] = BLOCK_TYPES.AIR;
+                fallingBlocks.push({ x, y, vy: 0, type: b });
+                fell++;
+            }
+            showNotification(L('🌋 Земля дрожит! С потолка сыплются камни'), 4000);
+            return fell;
+        }
+
+        // Тряска экрана при землетрясении (смещение в мировых пикселях)
+        function shakeOffset() {
+            if (shakeTime <= 0) return [0, 0];
+            const a = Math.min(1, shakeTime) * 3;
+            return [(Math.random() - 0.5) * 2 * a, (Math.random() - 0.5) * 2 * a];
+        }
+
+        // Заказ предлагается, когда подходишь к лавке
+        function maybeOfferOrder() {
+            if (!settings.events || order || stats.playtime - lastOrderAt < 180 || stats.playtime < 120) return false;
+            if (Math.random() > 0.5) { lastOrderAt = stats.playtime; return false; }
+            const deep = Math.max(run.maxDepth, 40);
+            const pool = [['coal', 0, 12], ['gold', 0, 8], ['silver', 220, 6], ['diamond', 360, 3], ['emerald', 470, 3], ['ruby', 600, 2], ['platinum', 670, 2]]
+                .filter(([, from]) => deep + 80 >= from);
+            const [ore, , base] = pool[Math.floor(Math.random() * pool.length)];
+            const need = base + Math.floor(Math.random() * base);
+            const price = oreByKey(ore).price;
+            order = { ore, need, got: 0, reward: need * price, until: stats.playtime + 900 };
+            lastOrderAt = stats.playtime;
+            showNotification(L`📜 Заказ скупщика: ${L(oreByKey(ore).name).toLowerCase()} ×${need} за 15 минут — заплачу вдвое (+${order.reward} ¤)`, 7000);
+            return true;
+        }
+
+        // При продаже: засчитать руду из заказа
+        function orderProgress(soldBackpack) {
+            if (!order) return false;
+            order.got += soldBackpack[order.ore] || 0;
+            if (order.got >= order.need) {
+                stats.money += order.reward;
+                run.earned += order.reward;
+                showNotification(L`📜 Заказ выполнен! Скупщик доплатил ${order.reward} ¤`, 5000);
+                sfx('fanfare');
+                order = null;
+                return true;
+            }
+            return false;
+        }
+
+        function orderLine() {
+            if (!order) return '';
+            const left = Math.max(0, Math.ceil((order.until - stats.playtime) / 60));
+            return L` · 📜 ${L(oreByKey(order.ore).name).toLowerCase()} ${order.got}/${order.need}, ${left} мин`;
+        }
+
         // ============ МОИ РЕКОРДЫ ============
         // Без сервера: итоги законченных игр хранятся в этом браузере (как достижения).
         // Записывается: выполненная цель, смерть в «одной жизни» и свободная игра, когда
@@ -4980,13 +5970,14 @@
             try {
                 const a = JSON.parse(localStorage.getItem(REC_KEY) || '[]');
                 records = Array.isArray(a) ? a.filter(r => r && GOALS[r.goal] && Number.isFinite(r.time) && Number.isFinite(r.date)) : [];
+            records.forEach(r => { if (r.daily && !/^\d{4}-\d{2}-\d{2}$/.test(r.daily)) r.daily = null; });
             } catch (e) { records = []; }
         }
 
         function saveRecords() { safeSetItem(REC_KEY, JSON.stringify(records.slice(-REC_MAX))); }
 
         // Категория рекорда: цель (у «Состояния» — со своей суммой)
-        function recordKind(r) { return r.goal === 'wealth' ? `wealth:${r.amount}` : r.goal; }
+        function recordKind(r) { return r.daily ? `daily:${r.daily}` : r.goal === 'wealth' ? `wealth:${r.amount}` : r.goal; }
 
         // Чем лучше: выполненную цель — быстрее; свободную игру — больше очков
         function recordBetter(a, b) {
@@ -4998,7 +5989,7 @@
         function addRecord(result) {
             if (run.debugUsed) return false;
             const r = {
-                date: Date.now(), goal: goal.id, amount: goal.amount, done: result === 'done', result,
+                date: Date.now(), goal: goal.id, amount: goal.amount, done: result === 'done', result, daily: mode.daily || null,
                 hardcore: mode.hardcore, variant: mode.variant,
                 time: Math.floor(stats.playtime), depth: run.maxDepth, earned: run.earned,
                 score: stats.score, deaths: run.deaths, kills: run.kills
@@ -5016,6 +6007,7 @@
         }
 
         function recordTitle(kind) {
+            if (kind.startsWith('daily:')) return L`Шахта дня ${dailyLabel(kind.slice(6))}`;
             if (kind.startsWith('wealth:')) return `${L(GOALS.wealth.name)}: ${Number(kind.split(':')[1]).toLocaleString(LOCALE())} ¤`;
             return L(GOALS[kind].name);
         }
@@ -5024,13 +6016,14 @@
             const box = document.getElementById('recordsInfo');
             if (!box) return;
             if (!records.length) { box.innerHTML = `<div class="ach-total">${L('Пока пусто: выполни цель — и здесь появится первый рекорд.')}</div>`; return; }
-            const kinds = ['platinum', 'bottom', 'wealth:10000', 'wealth:15000', 'wealth:25000', 'master', 'free'];
+            const days = [...new Set(records.filter(r => r.daily).map(r => r.daily))].sort().reverse().slice(0, 7);
+            const kinds = [...days.map(d => 'daily:' + d), 'platinum', 'bottom', 'wealth:10000', 'wealth:15000', 'wealth:25000', 'master', 'free'];
             let html = `<div class="ach-total">${L`Сыграно и записано игр: ${records.length}`}</div>`;
             for (const k of kinds) {
                 const list = records.filter(r => recordKind(r) === k && (r.goal === 'free' || r.done))
                     .sort((a, b) => recordBetter(a, b) ? -1 : recordBetter(b, a) ? 1 : 0).slice(0, 5);
                 if (!list.length) continue;
-                html += `<div class="shop-section">${GOALS[k.split(':')[0]].emoji} ${recordTitle(k)}</div><table class="rec-table">`;
+                html += `<div class="shop-section">${k.startsWith('daily:') ? '📅' : GOALS[k.split(':')[0]].emoji} ${recordTitle(k)}</div><table class="rec-table">`;
                 html += `<tr><th>#</th><th>${L('Время')}</th><th>${L('Глубина')}</th><th>${L('Очки')}</th><th>${L('Дата')}</th></tr>`;
                 list.forEach((r, i) => {
                     html += `<tr${i === 0 ? ' class="best"' : ''}><td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>` +
@@ -5173,9 +6166,11 @@
                 [L('Смертей'), run.deaths],
                 [L('Побеждено тварей'), run.kills],
                 [L('Кирка'), L(PICKAXES[pickaxeTier].name)],
-                [L('Сила / выносливость'), `${hero.str} / ${hero.end}`]
+                [L('Сила / выносливость'), `${hero.str} / ${hero.end}`],
+                [L('Код шахты'), worldCode()]
             ];
-            document.getElementById('finalInfo').innerHTML = (isBest ? `<div class="rec-new">${L('🏆 Новый рекорд!')}</div>` : '') +
+            const share = mode.daily && goal.done && !gameOver ? `<div class="modal-buttons"><button class="btn" onclick="shareDaily()">${L('📤 Поделиться результатом')}</button></div>` : '';
+            document.getElementById('finalInfo').innerHTML = share + (isBest ? `<div class="rec-new">${L('🏆 Новый рекорд!')}</div>` : '') +
                 rows.map(([k, v]) => `<div class="final-row"><span>${k}</span><b>${withCoins(String(v))}</b></div>`).join('');
             document.getElementById('finalModal').classList.add('active');
         }
@@ -5317,6 +6312,8 @@
             const count = backpackCount();
             if (count === 0) return 0;
             sfx('coins');
+            const sold = Object.assign({}, backpack);
+            if (!run.debugUsed) life.earned += backpackValue();
             addPoints('str', backpackWeight());
             run.earned += earned;
             run.platinumSold += backpack.platinum || 0;
@@ -5334,6 +6331,7 @@
                 showNotification(L`💰 Продано: ${count} шт. за ${earned} ¤`);
             }
             updateUI();
+            orderProgress(sold);
             return earned;
         }
 
@@ -5443,6 +6441,7 @@
             // снаряжение для подъёма: покупается сколько угодно раз
             const gear = [
                 { name: L`🧗 Лестницы ×${LADDER_PACK.count}`, info: L`ставятся клавишей Q · у тебя: ${ladders}`, price: LADDER_PACK.price, fn: 'buyLadders()' },
+                { name: L('🧨 Динамит'), info: L`взрывает круг вокруг себя через 2.5 с — клавиша B · руда уцелеет наполовину · у тебя: ${dynamite}`, price: DYNAMITE.price, fn: 'buyDynamite()' },
                 { name: L('🔥 Спички ×') + MATCHES_PACK.count, info: L`зажечь погасшую открытую лампу в шахте — клавиша L · у тебя: ${matches}`, price: MATCHES_PACK.price, fn: 'buyMatches()' },
                 { name: L('🧗 Верёвка'), info: L`${ROPE_LENGTH} м, спускается клавишей R · у тебя: ${ropes}`, price: ROPE_PRICE, fn: 'buyRope()' },
                 { name: L('🔦 Открытая лампа'), info: L('светит на 4 блока, отпугивает мышей и пауков; гаснет при падении, поджигает газ'), price: LAMPS[1].price, fn: 'buyLamp(1)', owned: lampTier >= 1 },
@@ -5565,7 +6564,11 @@
         }
 
         // Вызывается каждый кадр: продажа происходит, как только игрок подошёл
+        let wasAtShop = false;
         function checkShop() {
+            const at = isAtShop();
+            if (at && !wasAtShop) maybeOfferOrder();
+            wasAtShop = at;
             if (isAtShop() && lampTier > 0 && !lampLit) {
                 lampLit = true;
                 showNotification(L('🔦 В лавке лампу зажгли снова'));
@@ -5604,7 +6607,8 @@
 
         // Можно ли копать блок нынешней киркой
         function canDig(block) {
-            if (block === BLOCK_TYPES.AIR || block === BLOCK_TYPES.BEDROCK || block === BLOCK_TYPES.LAVA) return false;
+            if (block === BLOCK_TYPES.AIR || block === BLOCK_TYPES.BEDROCK || block === BLOCK_TYPES.LAVA ||
+                block === BLOCK_TYPES.WATER || block === BLOCK_TYPES.RAIL || block === BLOCK_TYPES.CART) return false;
             if (isClimbable(block) || block === BLOCK_TYPES.WEB) return true;
             return pickaxeTier >= (MIN_TIER[block] || 0);
         }
@@ -5707,8 +6711,10 @@
             if (block === BLOCK_TYPES.ROPE) { takeRope(targetX, targetY); updateUI(); return; }
             if (block === BLOCK_TYPES.BRIDGE) { takeBridge(targetX, targetY); updateUI(); return; }
             if (block === BLOCK_TYPES.WEB) { setBlock(targetX, targetY, BLOCK_TYPES.AIR); return; }
+            if (block === BLOCK_TYPES.CHEST) { openChest(targetX, targetY); return; }
             addPoints('end', SOFT[block] !== undefined ? 0.5 : 1);
             sfx('break');
+            if (!run.debugUsed) life.dug++;
 
             if (block !== BLOCK_TYPES.AIR && block !== BLOCK_TYPES.BEDROCK) {
                 const result = addToBackpack(block);
@@ -5868,6 +6874,28 @@
             <rect x="40" y="52" width="10" height="7" fill="#6b4320" stroke="#3a2410" stroke-width=".7"/>
             <path d="M40 55.5 H50" stroke="#3a2410" stroke-width=".6"/></svg>`;
 
+        const railSvg = () => svgWrap(`<rect x="0" y="35" width="40" height="3" fill="#6b4320"/>
+            ${[2, 14, 26].map(x => `<rect x="${x}" y="33" width="8" height="6" rx="1" fill="#5a3a1c"/>`).join('')}
+            <rect x="0" y="32" width="40" height="2.2" fill="#9aa0a6"/>`);
+        const cartSvg = () => svgWrap(`<path d="M5 14 h30 l-3 16 h-24z" fill="#6b5a4a" stroke="#2a2420" stroke-width="1.4"/>
+            <rect x="4" y="12" width="32" height="3.5" rx="1" fill="#8a8f95" stroke="#2a2420" stroke-width="1"/>
+            <path d="M9 12 q4 -6 8 -1 q3 -5 7 0 q4 -5 7 1z" fill="#3a3a3a"/><circle cx="14" cy="9" r="2" fill="#FFD700"/><circle cx="24" cy="8.5" r="1.8" fill="#C8CCD2"/>
+            <circle cx="12" cy="31" r="3.4" fill="#2a2420" stroke="#9aa0a6" stroke-width="1.2"/><circle cx="28" cy="31" r="3.4" fill="#2a2420" stroke="#9aa0a6" stroke-width="1.2"/>`);
+        const chestSvg = () => svgWrap(`<rect x="5" y="16" width="30" height="20" rx="2" fill="#7a4a24" stroke="#2a1608" stroke-width="1.4"/>
+            <path d="M5 18 q15 -12 30 0 v2 h-30z" fill="#8f5a2c" stroke="#2a1608" stroke-width="1.4"/>
+            <rect x="5" y="22" width="30" height="2.5" fill="#c8a165"/><rect x="11" y="16" width="2.5" height="20" fill="#c8a165"/><rect x="26.5" y="16" width="2.5" height="20" fill="#c8a165"/>
+            <rect x="17.5" y="21" width="5" height="6" rx="1" fill="#e0c068" stroke="#5a3d16" stroke-width=".8"/>`);
+        const nuggetSvg = () => svgWrap(`<path d="M9 24 q-2 -8 6 -11 q5 -6 12 -2 q7 2 6 9 q2 8 -6 10 q-6 4 -12 1 q-7 -1 -6 -7z" fill="#e8b923" stroke="#7a5a08" stroke-width="1.4"/>
+            <path d="M15 17 q4 -3 8 -1" stroke="#fff3b0" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="27" cy="22" r="1.4" fill="#fff3b0"/>`);
+
+        const bossSvg = f => svgWrap(`<path d="M2 ${f ? 30 : 31} q8 -9 16 -6 q8 3 12 -3 q6 -6 9 0 q-1 8 -8 10 q-10 3 -18 1 q-7 -1 -11 -2z" fill="#a8301a" stroke="#3a0a04" stroke-width="1.2"/>
+            <path d="M26 20 q8 -7 13 0 q-2 6 -9 6z" fill="#c8481a" stroke="#3a0a04" stroke-width="1"/>
+            <path d="M28 17 l2 -5 2 4 M33 16 l3 -5 1 5" stroke="#ffd23c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <circle cx="34" cy="21" r="1.6" fill="#ffd23c"/><circle cx="34" cy="21" r=".7" fill="#1a0a04"/>
+            <circle cx="10" cy="28" r="1.6" fill="#ffd23c"/><circle cx="17" cy="29" r="1.8" fill="#ffd23c"/><circle cx="23" cy="27" r="1.5" fill="#ffd23c"/>
+            <path d="M8 33 l${f ? -3 : -1} 5 M15 34 l${f ? 1 : -1} 5 M22 33 l${f ? -1 : 1} 5 M28 31 l${f ? 1 : 2} 5" stroke="#6a1a08" stroke-width="2" stroke-linecap="round"/>
+            <path d="M38 23 q2 ${f ? -1 : 1} 1.5 3" stroke="#ff9a2a" stroke-width="1.2" fill="none"/>`);
+
         const SPRITES = {
             'miner.idle':  [minerSvg()],
             'miner.walk':  [minerSvg({ legA: -18, legB: 18 }), minerSvg(), minerSvg({ legA: 18, legB: -18 }), minerSvg()],
@@ -5882,6 +6910,11 @@
             // канарейка в клетке за плечом: сидит / тревожно бьёт крыльями / погибла
             'canary.calm':  [canarySvg(0), canarySvg(1)],
             'tile.ladder':  [ladderSvg()],
+            'tile.rail':    [railSvg()],
+            'boss':         [bossSvg(0), bossSvg(1)],
+            'tile.cart':    [cartSvg()],
+            'tile.chest':   [chestSvg()],
+            'tile.nugget':  [nuggetSvg()],
             'tile.rope':    [ropeSvg(false), ropeSvg(true)],
             'tile.bridge':  [bridgeSvg()],
             'tile.web':     [webSvg()],
@@ -5956,6 +6989,10 @@
             }
             if (block === BLOCK_TYPES.BRIDGE) return drawSprite('tile.bridge', 0, x, y, false);
             if (block === BLOCK_TYPES.WEB) return drawSprite('tile.web', 0, x, y, false);
+            if (block === BLOCK_TYPES.RAIL) return drawSprite('tile.rail', 0, x, y, false);
+            if (block === BLOCK_TYPES.CART) { drawSprite('tile.rail', 0, x, y, false); return drawSprite('tile.cart', 0, x, y, false); }
+            if (block === BLOCK_TYPES.CHEST) return drawSprite('tile.chest', 0, x, y, false);
+            if (block === BLOCK_TYPES.NUGGET) return drawSprite('tile.nugget', 0, x, y, false);
             return false;
         }
 
@@ -6031,6 +7068,8 @@
             // мир — в масштабе клетки
             ctx.save();
             if (ctx.scale) ctx.scale(ZOOM, ZOOM);
+            const [shx, shy] = shakeOffset();
+            if ((shx || shy) && ctx.translate) ctx.translate(shx, shy);
 
             // камера может стоять между клетками (у края мира) — сдвигаем сетку
             const camX = Math.floor(camera.x), camY = Math.floor(camera.y);
@@ -6042,7 +7081,7 @@
                     const worldY = y + camY;
                     const block = getBlock(worldX, worldY);
 
-                    if (isClimbable(block) || block === BLOCK_TYPES.WEB) {
+                    if (isSeeThrough(block)) {
                         // фон как у пустоты: небо или пещера
                         ctx.fillStyle = worldY >= SURFACE_Y ? BIOMES[biomeAtBlock(worldX, worldY)].cave : BLOCK_COLORS[BLOCK_TYPES.AIR];
                     } else if (block === BLOCK_TYPES.AIR && worldY >= SURFACE_Y) {
@@ -6054,12 +7093,18 @@
                     }
                     ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                    if (block !== BLOCK_TYPES.AIR && !isClimbable(block) && block !== BLOCK_TYPES.WEB) {
+                    if (block !== BLOCK_TYPES.AIR && !isSeeThrough(block)) {
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
                         ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                     }
-                    const tileSprited = isClimbable(block) || block === BLOCK_TYPES.WEB
+                    if (block === BLOCK_TYPES.WATER) drawWater(x * TILE_SIZE, y * TILE_SIZE, worldX, worldY);
+                    if (settings.palette === 'cb') drawOreGlyph(block, x * TILE_SIZE, y * TILE_SIZE);
+                    const tileSprited = isSeeThrough(block) || block === BLOCK_TYPES.NUGGET
                         ? drawTileSprite(block, x * TILE_SIZE, y * TILE_SIZE, worldX, worldY) : false;
+                    if (mapRevealed(worldX, worldY, block)) {
+                        ctx.strokeStyle = 'rgba(255, 230, 120, 0.9)'; ctx.lineWidth = 2;
+                        ctx.strokeRect(x * TILE_SIZE + 2, y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4); ctx.lineWidth = 1;
+                    }
                     if (!tileSprited && block === BLOCK_TYPES.LADDER) {
                         const px = x * TILE_SIZE, py = y * TILE_SIZE;
                         ctx.fillStyle = BLOCK_COLORS[BLOCK_TYPES.LADDER];
@@ -6120,6 +7165,8 @@
             renderDigProgress();
             renderCreatures();
             renderHazards();
+            renderFuses();
+            renderBoss();
             renderPlayer();
             renderDarkness();
             ctx.restore();
@@ -6127,12 +7174,16 @@
             renderScreenEffects();
             if (touchMode) renderTouchHud();
             renderRadioBadge();
+            renderMiniMap();
+            renderBossBar();
             renderCageWait();
         }
 
         function renderPlayer() {
             const playerScreenX = (player.x - camera.x) * TILE_SIZE;
             const playerScreenY = (player.y - camera.y) * TILE_SIZE;
+            if (cartRide) drawSprite('tile.cart', 0, (cartRide.x - camera.x) * TILE_SIZE, (cartRide.y - camera.y) * TILE_SIZE + 4, cartRide.dir < 0);
+            renderBreath(playerScreenX, playerScreenY);
             if (renderPlayerSprite(playerScreenX, playerScreenY)) return;
 
             ctx.fillStyle = '#FFA500';
@@ -6384,7 +7435,7 @@
             document.getElementById('ladders').textContent = ladders;
             document.getElementById('ropes').textContent = ropes;
             document.getElementById('heroStats').textContent = `${statLine('str')}   ${statLine('end')}`;
-            setCoinText(document.getElementById('goalStat'), (mode.hardcore ? '💀 ' : '') + goalProgress());
+            setCoinText(document.getElementById('goalStat'), (mode.daily ? '📅 ' : mode.hardcore ? '💀 ' : '') + goalProgress() + orderLine());
             const gearList = [lampTier ? L(LAMPS[lampTier].name).toLowerCase() + (lampLit ? '' : L(' (погасла)')) : null,
                               matches ? L`спички ${matches}` : null,
                               beltTier ? L(BELTS[beltTier].name).toLowerCase() : null, hasCanary ? L('канарейка') : null].filter(Boolean);
@@ -6460,7 +7511,14 @@
                 world: {
                     width: WORLD_WIDTH,
                     height: WORLD_HEIGHT,
-                    data: compressWorld()
+                    data: (() => {
+                        if (!cartRide) return compressWorld();
+                        const cx = Math.round(cartRide.x), was = getBlock(cx, cartRide.y);
+                        setBlock(cx, cartRide.y, BLOCK_TYPES.CART);
+                        const d = compressWorld();
+                        setBlock(cx, cartRide.y, was);
+                        return d;
+                    })()
                 },
                 player: {
                     x: player.x,
@@ -6482,6 +7540,10 @@
                 hero: { str: hero.str, end: hero.end, strPts: hero.strPts, endPts: hero.endPts },
                 goal: { id: goal.id, amount: goal.amount, done: goal.done },
                 mode: Object.assign({}, mode),
+                order: order ? Object.assign({}, order) : null,
+                dynamite: dynamite,
+                bossHome: bossHome,
+                seen: seenToRuns(),
                 run: Object.assign({}, run),
                 lamp: lampTier,
                 lampLit: lampLit,
@@ -6618,10 +7680,16 @@
             const medCount = v => { const n = Number(v); return Number.isInteger(n) && n >= 0 ? Math.min(MAX_MEDS, n) : 0; };
             bandages = medCount(saveData.bandages);
             medkits = medCount(saveData.medkits);
+            cartRide = null; breath = BREATH_MAX; fuses = [];
+            dynamite = Number.isInteger(saveData.dynamite) && saveData.dynamite >= 0 ? Math.min(10, saveData.dynamite) : 0;
+            seenFromRuns(saveData.seen);
             const ms = saveData.mode || {};
+            mode.daily = typeof ms.daily === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ms.daily) ? ms.daily : null;
             Object.assign(mode, { hardcore: ms.hardcore === true, variant: ms.variant === 'harsh' ? 'harsh' : 'oneLife',
                 noRegen: ms.noRegen === true, noCage: ms.noCage === true, fierce: ms.fierce === true, dark: ms.dark === true });
             if (!mode.hardcore) Object.assign(mode, { noRegen: false, noCage: false, fierce: false, dark: false });
+            const os = saveData.order;
+            order = os && ORES_BY_KEY_OK(os.ore) && Number.isFinite(os.need) && Number.isFinite(os.until) ? Object.assign({ got: 0, reward: 0 }, os) : null;
             gameOver = false;
             const gs = saveData.goal || {};
             goal.id = GOALS[gs.id] ? gs.id : 'free';
@@ -6630,7 +7698,10 @@
             const rs = saveData.run || {};
             const cnt = v => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0; };
             Object.assign(run, { earned: cnt(rs.earned), deaths: cnt(rs.deaths), kills: cnt(rs.kills), maxDepth: cnt(rs.maxDepth),
-                                 platinumSold: cnt(rs.platinumSold), reachedBottom: rs.reachedBottom === true, debugUsed: rs.debugUsed === true });
+                                 platinumSold: cnt(rs.platinumSold), reachedBottom: rs.reachedBottom === true, debugUsed: rs.debugUsed === true,
+                                 bossDefeated: rs.bossDefeated === true });
+            bossHome = saveData.bossHome && Number.isFinite(saveData.bossHome.x) && Number.isFinite(saveData.bossHome.y) ? { x: saveData.bossHome.x, y: saveData.bossHome.y } : null;
+            spawnBoss();
             const hs = saveData.hero || {};
             const lvl = v => { const n = Number(v); return Number.isInteger(n) && n >= 1 && n <= STAT_MAX ? n : 1; };
             const pts = v => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.min(1e6, n) : 0; };
@@ -6818,7 +7889,11 @@
                 updateUI();
                 showNotification(L('🆕 Новая игра начата'));
                 gameOver = false;
-                Object.assign(mode, { hardcore: false, variant: 'oneLife', noRegen: false, noCage: false, fierce: false, dark: false });
+                Object.assign(mode, { hardcore: false, variant: 'oneLife', noRegen: false, noCage: false, fierce: false, dark: false, daily: null });
+                order = null; lastOrderAt = 0; quakeIn = QUAKE_FIRST;
+                cartRide = null; mapUntil = 0; breath = BREATH_MAX;
+                dynamite = 0; fuses = []; seenFromRuns(null);
+                life.games++; saveLife();
                 setTimeout(openModePicker, 0);     // режим и цель — сразу после начала
             }
         }
@@ -7029,7 +8104,7 @@
         // вид радио и видео по умолчанию простой: граммофон и телевизор игрок включает сам
         const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null,
             tpSize: 'medium', tpOpacity: 'half', tpSwap: false, hudSize: 'normal',
-            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true };
+            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true, events: true, minimap: true, palette: 'normal', bigText: false, keymap: {} };
         const RADIO_SKINS = ['plain', 'gramophone'];
         const VIDEO_SKINS = ['plain', 'tv'];
 
@@ -7050,6 +8125,14 @@
                 if (typeof st.sound === 'boolean') settings.sound = st.sound;
                 if (typeof st.ambience === 'boolean') settings.ambience = st.ambience;
                 if (typeof st.tips === 'boolean') settings.tips = st.tips;
+                if (typeof st.events === 'boolean') settings.events = st.events;
+                if (typeof st.minimap === 'boolean') settings.minimap = st.minimap;
+                if (st.palette === 'cb' || st.palette === 'normal') settings.palette = st.palette;
+                if (typeof st.bigText === 'boolean') settings.bigText = st.bigText;
+                if (st.keymap && typeof st.keymap === 'object') {
+                    settings.keymap = {};
+                    for (const [k, v] of Object.entries(st.keymap)) if (REMAP_ACTIONS.some(a => a[0] === k) && typeof v === 'string' && /^[A-Za-z0-9]+$/.test(v)) settings.keymap[k] = v;
+                }
                 if (Number.isFinite(st.volume) && st.volume >= 0 && st.volume <= 1) settings.volume = st.volume;
                 if (st.lang === 'ru' || st.lang === 'en') settings.lang = st.lang;
                 // ссылка с сайта: play/?lang=en — язык страницы сайта становится языком игры
@@ -7104,6 +8187,12 @@
             const so = document.getElementById('optSound'); if (so) so.checked = settings.sound;
             const am = document.getElementById('optAmbience'); if (am) am.checked = settings.ambience;
             const tp = document.getElementById('optTips'); if (tp) tp.checked = settings.tips;
+            const ev = document.getElementById('optEvents'); if (ev) ev.checked = settings.events;
+            const mmo = document.getElementById('optMinimap'); if (mmo) mmo.checked = settings.minimap;
+            const pal = document.getElementById('optPalette'); if (pal) pal.checked = settings.palette === 'cb';
+            const bt = document.getElementById('optBigText'); if (bt) bt.checked = settings.bigText;
+            if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText);
+            renderKeymap();
             const vo = document.getElementById('optVolume'); if (vo) vo.value = Math.round(settings.volume * 100);
             const ka = document.getElementById('optKeepAwake'); if (ka) ka.checked = settings.keepAwake;
             if (document.querySelectorAll) document.querySelectorAll('#langOptions [data-lang]').forEach(b => b.classList.toggle('chosen', b.dataset.lang === LANG));
@@ -7174,7 +8263,7 @@
         }
 
         // Звук события. Повторы одного звука чаще minGap секунд не играются.
-        const SFX_GAP = { step: 0.22, climb: 0.25, hurt: 0.25, hit: 0.2, crack: 0.3, cavein: 0.4, chirp: 0.6, heat: 0.5 };
+        const SFX_GAP = { step: 0.22, climb: 0.25, hurt: 0.25, hit: 0.2, crack: 0.3, cavein: 0.4, chirp: 0.6, heat: 0.5, cartRoll: 0.16, splash: 0.4 };
         function sfx(name, arg) {
             if (!settings.sound || !SFX.ctx || SFX.ctx.state !== 'running') return false;
             const now = SFX.ctx.currentTime, gap = SFX_GAP[name] || 0.03;
@@ -7213,6 +8302,10 @@
                 case 'chirp':      [2600, 3100, 2600].forEach((f, i) => sfxTone({ freq: f, to: f * 1.15, dur: 0.05, gain: 0.07, at: i * 0.08 })); return true;
                 case 'cage':       for (let i = 0; i < 5; i++) sfxTone({ freq: r(700, 900), dur: 0.05, gain: 0.07, type: 'square', at: i * 0.07 }); return true;
                 case 'achievement':[523, 659, 784, 1047].forEach((f, i) => sfxTone({ freq: f, dur: 0.18, gain: 0.12, type: 'triangle', at: i * 0.1 })); return true;
+                case 'splash':     sfxNoise({ dur: 0.35, type: 'bandpass', freq: 900, q: 0.8, gain: 0.25, attack: 0.01 }); sfxTone({ freq: 500, to: 180, dur: 0.2, gain: 0.08 }); return true;
+                case 'cart':       sfxTone({ freq: 160, to: 120, dur: 0.25, gain: 0.15, type: 'square' }); sfxNoise({ dur: 0.2, freq: 600, gain: 0.15 }); return true;
+                case 'cartRoll':   sfxNoise({ dur: 0.05, type: 'bandpass', freq: 1800, q: 4, gain: 0.12 }); sfxTone({ freq: 90, dur: 0.06, gain: 0.08, type: 'square' }); return true;
+                case 'chest':      sfxTone({ freq: 200, to: 140, dur: 0.12, gain: 0.12, type: 'square' }); [1320, 1568, 2093].forEach((f, i) => sfxTone({ freq: f, dur: 0.15, gain: 0.1, type: 'triangle', at: 0.12 + i * 0.07 })); return true;
                 case 'fanfare':    [523, 659, 784, 1047, 784, 1047].forEach((f, i) => sfxTone({ freq: f, dur: 0.25, gain: 0.13, type: 'square', at: i * 0.14 })); return true;
             }
             return false;
@@ -7259,6 +8352,10 @@
             if (what === 'sound') settings.sound = !!value;
             else if (what === 'ambience') settings.ambience = !!value;
             else if (what === 'tips') settings.tips = !!value;
+            else if (what === 'events') settings.events = !!value;
+            else if (what === 'minimap') settings.minimap = !!value;
+            else if (what === 'palette') settings.palette = value ? 'cb' : 'normal';
+            else if (what === 'bigText') { settings.bigText = !!value; if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText); }
             else if (what === 'volume') settings.volume = Math.max(0, Math.min(1, Number(value) / 100));
             else return false;
             saveSettings(); sfxVolume();
@@ -7275,7 +8372,7 @@
             sndMove.x = player.x; sndMove.y = player.y;
             if (dx > 2 || dy > 2) return;                      // телепорт, клеть — не шаги
             if (player.climbing) { sndMove.climb += dy; if (sndMove.climb >= 0.6) { sndMove.climb = 0; sfx('climb'); } }
-            else if (player.onGround) { sndMove.step += dx; if (sndMove.step >= 0.9) { sndMove.step = 0; sfx('step'); } }
+            else if (player.onGround) { sndMove.step += dx; life.walked += dx; if (sndMove.step >= 0.9) { sndMove.step = 0; sfx('step'); } }
             updateAmbience(dt);
         }
 
@@ -7616,6 +8713,12 @@
                 updateGoal();
                 soundTick(dt);
                 updateTips(dt);
+                updateEvents(dt);
+                updateWater(dt);
+                markSeen();
+                updateDynamite(dt);
+                updateBoss(dt);
+                lifeTick(dt);
                 updateBiome(currentTime);
                 updateCamera();
             }
@@ -8109,10 +9212,12 @@
         // Обработка клавиатуры (сенсорные кнопки зовут те же функции)
         // Клавиши-действия срабатывают один раз на нажатие: автоповтор при удержании
         // не должен, например, тратить бинты один за другим
-        const ONE_SHOT_KEYS = new Set(['KeyE', 'KeyQ', 'KeyR', 'KeyT', 'KeyL', 'KeyC', 'KeyH', 'KeyM', 'KeyV', 'KeyP', 'Backquote', 'KeyG', 'Escape']);
+        const ONE_SHOT_KEYS = new Set(['KeyE', 'KeyQ', 'KeyR', 'KeyT', 'KeyL', 'KeyB', 'KeyN', 'KeyC', 'KeyH', 'KeyM', 'KeyV', 'KeyP', 'Backquote', 'KeyG', 'Escape']);
 
         function onKeyDown(e) {
             sfxUnlock();                       // звук браузеры разрешают только после нажатия
+            if (remapWaiting) { if (e.preventDefault) e.preventDefault(); finishRemap(e.code); return; }
+            e = remapEvent(e);
             // набор текста в полях (название станции, адрес, имя сохранения) — не управление
             if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) && e.code !== 'Enter' && e.code !== 'Escape') return;
             keys[e.code] = true;
@@ -8129,12 +9234,19 @@
             }
 
             if (e.code === 'KeyE' && !gameState.paused) {
-                openShop();
+                if (cartRide) dismountCart();
+                else if (!isAtShop() && cartNear()) mountCart();
+                else openShop();
             }
             if (e.code === 'KeyQ' && !gameState.paused) placeLadder();
             if (e.code === 'KeyR' && !gameState.paused) deployRope();
             if (e.code === 'KeyT' && !gameState.paused) deployBridge();
             if (e.code === 'KeyL' && !gameState.paused) lightLamp();
+            if (e.code === 'KeyB' && !gameState.paused) lightDynamite();
+            if (e.code === 'KeyN') {
+                const mm = document.getElementById('mapModal');
+                if (mm && mm.classList.contains('active')) closeBigMap(); else if (!gameState.paused) openBigMap();
+            }
             if (e.code === 'KeyC' && !gameState.paused) openCage();
             if (e.code === 'KeyH' && !gameState.paused) heal();
             if (e.code === 'KeyM' && !gameState.paused) radioPanelToggle();
@@ -8149,6 +9261,9 @@
                     closeCharacter();
                     closeAchievements();
                     closeRecords();
+                    closeBigMap();
+                    closeStats();
+                    closeDiary();
                     closeShop();
                     closeSaveModal();
                     closeLoadModal();
@@ -8165,6 +9280,7 @@
         }
 
         function onKeyUp(e) {
+            e = remapEvent(e);
             keys[e.code] = false;
         }
 
