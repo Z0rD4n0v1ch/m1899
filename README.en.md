@@ -21,6 +21,7 @@ A 2D mining game in a single HTML file: dig 788 meters down, sell ore at the sho
 - **Living graphics** — animated SVG sprites; zoom: small, medium or large; crisp on high-DPI screens.
 - **Radio and video** — add your own online stations and YouTube, RuTube, VK or .mp4 videos; plain style, a gramophone or a TV set.
 - **Sound** — all sounds are generated in code (Web Audio): pickaxe hits, coins, footsteps, cave-ins, gas, explosions, creatures; plus mine ambience of its own in every layer. Volume and switches in Settings.
+- **Supports** against cave-ins, a **pump** to drain lakes, **day and night** on the surface (the first sale after dawn pays 15% more), particles and block textures.
 - **Accessibility** — colour-blind friendly ore symbols, large text, custom key bindings.
 - **An old miner’s diary** — 10 pages of the mine’s 1899 story found in chests, and **the Master of the Deep**, a fiery boss guarding a platinum vein at the very bottom.
 - **Mini-map and full mine map** (N), **dynamite** (B), **play by mine code** — send your world code to a friend, **all-time statistics**.

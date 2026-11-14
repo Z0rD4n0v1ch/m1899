@@ -41,7 +41,7 @@ function fresh() {
 const dig = block => g.run(`world[player.y][51] = BLOCK_TYPES.${block}; world[player.y][50] = BLOCK_TYPES.AIR; dig();`);
 
 console.log('Список');
-check('27 достижений в 7 группах', g.run('ACHIEVEMENTS.length') === 27 && new Set(g.run('ACHIEVEMENTS.map(a => a.group)')).size === 7);
+check('28 достижений в 7 группах', g.run('ACHIEVEMENTS.length') === 28 && new Set(g.run('ACHIEVEMENTS.map(a => a.group)')).size === 7);
 check('сначала ни одного', g.run('Object.keys(ach.got).length') === 0);
 
 console.log('Шахта');
@@ -138,7 +138,7 @@ check('битые — без ошибок', boot({ miner_achievements: 'не jso
 console.log('Окно');
 g.run('openAchievements()');
 check('открывается, игра на паузе', g.el('achievementsModal').classList.contains('active') && g.run('gameState.paused'));
-check('«Получено 20 из 27», группы и даты', g.el('achievementsInfo').innerHTML.includes('Получено 20 из 27') && g.el('achievementsInfo').innerHTML.includes('🐀 Твари'));
+check('«Получено 20 из 28», группы и даты', g.el('achievementsInfo').innerHTML.includes('Получено 20 из 28') && g.el('achievementsInfo').innerHTML.includes('🐀 Твари'));
 g.handlers.keydown({ code: 'Escape', preventDefault() {} });
 check('ESC закрывает', !g.el('achievementsModal').classList.contains('active') && !g.run('gameState.paused'));
 check('кнопка «🏅 Достижения» под статистикой', /<div id="sideButtons">[\s\S]*?openAchievements\(\)">🏅 Достижения/.test(html));

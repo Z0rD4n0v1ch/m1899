@@ -644,6 +644,13 @@
         .keymap-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; }
         .keymap-row .btn { margin: 0; min-width: 120px; }
         body.big-text #ui, body.big-text #leftPanel, body.big-text #sidebar .btn, body.big-text .notification, body.big-text .modal-content { zoom: 1.18; }
+        #moreButtons { display: none; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 8px; }
+        body.show-more #moreButtons, body.touch.menu-open #moreButtons { display: grid; }
+        body.touch #moreToggle { display: none; }
+        .title-block { text-align: center; margin-bottom: 10px; }
+        .title-block img { width: 96px; height: 96px; image-rendering: auto; }
+        .title-name { font-size: 30px; font-weight: bold; color: #ffa500; letter-spacing: 1px; text-shadow: 2px 2px 0 #000; }
+        .title-sub { color: #aaa; font-size: 12px; margin-top: 2px; }
         .touch-only-btn { display: none; }
         body.touch .touch-only-btn { display: block; }
         #bigMapWrap { max-height: 65vh; overflow-y: auto; text-align: center; }
@@ -1725,12 +1732,17 @@
     <div id="sideButtons">
         <button class="btn btn-secondary" onclick="openCharacter()">👷 Персонаж <span class="kbd-hint">(P)</span></button>
         <button class="btn btn-secondary" id="controlsToggle" onclick="toggleControls()">🎮 Управление</button>
-        <button class="btn btn-secondary" onclick="openAchievements()">🏅 Достижения</button>
-        <button class="btn btn-secondary" onclick="openRecords()">🏆 Рекорды</button>
         <button class="btn btn-secondary" onclick="openBigMap()">🗺 Карта <span class="kbd-hint">(N)</span></button>
-        <button class="btn btn-secondary" onclick="openStats()">📊 Статистика</button>
-        <button class="btn btn-secondary" onclick="openDiary()">📖 Дневник</button>
-        <button class="btn btn-secondary touch-only-btn" onclick="document.body.classList.remove('menu-open'); lightDynamite()">🧨 Динамит</button>
+        <button class="btn btn-secondary" id="moreToggle" onclick="toggleMore()">📒 Журнал ▾</button>
+        <div id="moreButtons">
+            <button class="btn btn-secondary" onclick="openAchievements()">🏅 Достижения</button>
+            <button class="btn btn-secondary" onclick="openRecords()">🏆 Рекорды</button>
+            <button class="btn btn-secondary" onclick="openStats()">📊 Статистика</button>
+            <button class="btn btn-secondary" onclick="openDiary()">📖 Дневник</button>
+            <button class="btn btn-secondary touch-only-btn" onclick="document.body.classList.remove('menu-open'); lightDynamite()">🧨 Динамит</button>
+            <button class="btn btn-secondary touch-only-btn" onclick="document.body.classList.remove('menu-open'); placeSupport()">🪵 Крепь</button>
+            <button class="btn btn-secondary touch-only-btn" onclick="document.body.classList.remove('menu-open'); pumpWater()">🚰 Насос</button>
+        </div>
     </div>
 
     <div id="controls">
@@ -1743,6 +1755,8 @@
         <p><span class="key">L</span> (<span class="key">Д</span>) - Зажечь погасшую лампу спичкой</p>
         <p><span class="key">B</span> (<span class="key">И</span>) - Поджечь шашку динамита</p>
         <p><span class="key">N</span> (<span class="key">Т</span>) - Карта шахты</p>
+        <p><span class="key">X</span> (<span class="key">Ч</span>) - Поставить крепь</p>
+        <p><span class="key">Z</span> (<span class="key">Я</span>) - Откачать воду насосом</p>
         <p><span class="key">T</span> (<span class="key">Е</span>) - Натянуть верёвку-переправу через пропасть или лаву</p>
         <p><span class="key">C</span> (<span class="key">С</span>) - Клеть: платный подъём наверх</p>
         <p><span class="key">H</span> (<span class="key">Р</span>) - Лечиться: бинт или аптечка</p>
@@ -1887,6 +1901,11 @@
     <!-- Выбор режима -->
     <div id="modeModal" class="modal">
         <div class="modal-content">
+            <div class="title-block">
+                <img id="titleSprite" alt="" width="96" height="96">
+                <div class="title-name" id="titleName">Шахтёр 1899</div>
+                <div class="title-sub" id="titleSub">2D-игра про шахтёра · 788 метров вглубь</div>
+            </div>
             <div class="modal-title">⛏️ Новая игра</div>
             <div class="mode-choice">
                 <button class="btn mode-btn" onclick="chooseMode(false)">⛏️ Обычная игра<span>смерть — потеря рюкзака, сохранения как обычно</span></button>
@@ -2073,6 +2092,7 @@
                 <label class="setting-check"><input type="checkbox" id="optTips" onchange="setSound('tips', this.checked)" checked> Подсказки для новичка</label>
                 <label class="setting-check"><input type="checkbox" id="optEvents" onchange="setSound('events', this.checked)" checked> События: землетрясения и заказы скупщика</label>
                 <label class="setting-check"><input type="checkbox" id="optMinimap" onchange="setSound('minimap', this.checked)" checked> Мини-карта в углу</label>
+                <label class="setting-check"><input type="checkbox" id="optDayNight" onchange="setSound('daynight', this.checked)" checked> День и ночь на поверхности</label>
                 <button class="btn btn-secondary btn-small" onclick="resetTips()">Показать подсказки снова</button>
             </div>
             <div class="setting">
@@ -2834,7 +2854,37 @@
             "Крупный текст: панели, окна, уведомления": "Large text: panels, windows, notifications",
             "Свои клавиши": "Custom keys",
             "Как было": "Reset",
-            "Текстуры блоков (выключить — ровные клетки, быстрее на слабых телефонах)": "Block textures (off — flat tiles, faster on weak phones)"
+            "Текстуры блоков (выключить — ровные клетки, быстрее на слабых телефонах)": "Block textures (off — flat tiles, faster on weak phones)",
+            "🪵 Крепи нет — продаётся в лавке": "🪵 No supports — the shop sells them",
+            "🪵 Здесь крепь не поставить": "🪵 Can’t place a support here",
+            "🪵 Крепь стоит: потолок рядом не обвалится. Осталось: {0}": "🪵 Support placed: the ceiling nearby won’t cave in. Left: {0}",
+            "🪵 Куплена крепь: {0} шт.": "🪵 Bought supports: {0}",
+            "🚰 Куплен насос: встань у воды и нажми Z — озеро откачается": "🚰 Bought a pump: stand by the water and press Z to drain the lake",
+            "🚰 Насоса нет — продаётся в лавке": "🚰 No pump — the shop sells one",
+            "🚰 Рядом нет воды": "🚰 No water nearby",
+            "🚰 Откачано воды: {0} клеток": "🚰 Water pumped out: {0} tiles",
+            "🌅 Рассвет: скупщик открыл лавку. Первая продажа — на 15 % дороже": "🌅 Dawn: the trader opened the shop. The first sale pays 15% more",
+            "🌙 Ночь: скупщик спит. Руду примет, а товары — утром": "🌙 Night: the trader is asleep. He’ll take ore, but sells goods in the morning",
+            "🌙 Скупщик спит. Лавка откроется через {0} мин — руду он примет и ночью": "🌙 The trader is asleep. The shop opens in {0} min — he still takes ore at night",
+            "🌅 Утренняя цена: +{0} ¤": "🌅 Morning price: +{0} ¤",
+            "🪵 Крепь ×": "🪵 Supports ×",
+            "подпорка: потолок рядом не обвалится — клавиша X · у тебя: {0}": "a prop: the ceiling nearby won’t cave in — the X key · you have: {0}",
+            "🚰 Насос": "🚰 Pump",
+            "откачивает озеро: встань у воды и нажми Z": "drains a lake: stand by the water and press Z",
+            "крепь {0}": "supports {0}",
+            "насос": "pump",
+            "динамит {0}": "dynamite {0}",
+            "Крепь": "Support",
+            "Насос": "Pump",
+            "Осушитель": "Lake Drainer",
+            "откачать озеро насосом": "drain a lake with the pump",
+            "День и ночь на поверхности": "Day and night on the surface",
+            "📒 Журнал ▾": "📒 Journal ▾",
+            "🪵 Крепь": "🪵 Support",
+            "2D-игра про шахтёра · 788 метров вглубь": "A 2D mining game · 788 meters down",
+            ") - Поставить крепь": ") - Place a support",
+            ") - Откачать воду насосом": ") - Pump out water",
+            "Шахтёр 1899": "Miner 1899"
             };
         let LANG = 'ru';
 
@@ -2986,7 +3036,8 @@
             RAIL: 21,        // старые рельсы в штольне: сквозь них ходят
             CART: 22,        // вагонетка на рельсах: E — сесть и покатиться
             CHEST: 23,       // сундук старых шахтёров: раскопать — находка
-            NUGGET: 24       // самородок золота: редкий и дорогой
+            NUGGET: 24,      // самородок золота: редкий и дорогой
+            SUPPORT: 25      // крепь: деревянная подпорка — потолок рядом не обваливается
         };
 
         // Цвета блоков
@@ -3456,13 +3507,14 @@
             return block !== BLOCK_TYPES.AIR && block !== BLOCK_TYPES.LAVA &&
                    block !== BLOCK_TYPES.LADDER && block !== BLOCK_TYPES.ROPE && block !== BLOCK_TYPES.WEB &&
                    block !== BLOCK_TYPES.BRIDGE && block !== BLOCK_TYPES.WATER &&
-                   block !== BLOCK_TYPES.RAIL && block !== BLOCK_TYPES.CART;
+                   block !== BLOCK_TYPES.RAIL && block !== BLOCK_TYPES.CART && block !== BLOCK_TYPES.SUPPORT;
         }
 
         // Клетки, сквозь которые видно пещеру (фон рисуется как у пустоты)
         function isSeeThrough(block) {
             return isClimbable(block) || block === BLOCK_TYPES.WEB || block === BLOCK_TYPES.RAIL ||
-                   block === BLOCK_TYPES.CART || block === BLOCK_TYPES.WATER || block === BLOCK_TYPES.CHEST;
+                   block === BLOCK_TYPES.CART || block === BLOCK_TYPES.WATER || block === BLOCK_TYPES.CHEST ||
+                   block === BLOCK_TYPES.SUPPORT;
         }
 
         function isClimbable(block) {
@@ -4187,7 +4239,14 @@
             maybeCrumble(x, y - 1);
         }
 
+        // Рядом стоит крепь? (в этой колонке или соседних, не дальше 6 клеток вниз)
+        function isSupported(x, y) {
+            for (let dx = -1; dx <= 1; dx++) for (let dy = 1; dy <= 6; dy++) if (getBlock(x + dx, y + dy) === BLOCK_TYPES.SUPPORT) return true;
+            return false;
+        }
+
         function maybeCrumble(x, y) {
+            if (isSupported(x, y)) return;
             const b = getBlock(x, y);
             if (b !== BLOCK_TYPES.STONE && b !== BLOCK_TYPES.CLAY) return;
             if (BIOMES[biomeAtBlock(x, y)].hazard !== 'обвалы') return;
@@ -4275,6 +4334,7 @@
                         setBlock(c.x, c.y, BLOCK_TYPES.AIR);
                         fallingBlocks.push({ x: c.x, y: c.y, vy: 0, type });
                         sfx('cavein');
+                        spawnParticles(c.x + 0.5, c.y + 0.8, '#b8ad9c', 6, { speed: 1.5, up: 0, life: 0.8, gravity: 4 });
                         maybeCrumble(c.x, c.y - 1);      // обвал может пойти дальше вверх
                     }
                 }
@@ -5086,6 +5146,10 @@
 
         function openModePicker() {
             gameState.paused = true;
+            const ts = document.getElementById('titleSprite');
+            if (ts && SPRITES['miner.idle']) ts.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SPRITES['miner.idle'][0]);
+            const tn = document.getElementById('titleName'); if (tn) tn.textContent = L('Шахтёр 1899');
+            const tsub = document.getElementById('titleSub'); if (tsub) tsub.textContent = L('2D-игра про шахтёра · 788 метров вглубь') + ' · v' + GAME_VERSION;
             const box = document.getElementById('hcOptions');
             if (box && box.style) box.style.display = 'none';
             document.getElementById('modeModal').classList.add('active');
@@ -5188,7 +5252,8 @@
             { id: 'goldrush',    group: L('🧭 Находки'),   name: L('Золотая лихорадка'),       text: L('добыть самородок') },
             { id: 'blaster',     group: L('🧭 Находки'),   name: L('Подрывник'),               text: L('взорвать шашку динамита') },
             { id: 'bossSlayer',  group: L('💀 Риск'),      name: L('Ершовская шахта'),         text: L('победить Хозяина дна') },
-            { id: 'chronicler',  group: L('🧭 Находки'),   name: L('Летописец'),               text: L('собрать все страницы дневника') }
+            { id: 'chronicler',  group: L('🧭 Находки'),   name: L('Летописец'),               text: L('собрать все страницы дневника') },
+            { id: 'pumper',      group: L('🧭 Находки'),   name: L('Осушитель'),               text: L('откачать озеро насосом') }
         ];
         const ach = { got: {}, counters: {} };     // got: id → дата получения (мс)
         // для «Ступенька за ступенькой»: самая большая глубина и было ли снаряжение в этом походе
@@ -5288,6 +5353,123 @@
 
 
 
+
+
+        // ============ ЧАСТИЦЫ ============
+        // Осколки породы, искры от руды, пыль обвала, брызги воды, дым взрыва.
+        let particles = [];
+        function spawnParticles(x, y, color, n, opt = {}) {
+            if (fastMode() || settings.textures === false) n = Math.ceil(n / 3);          // на слабых устройствах — меньше
+            const sp = opt.speed || 3, up = opt.up === undefined ? 2 : opt.up;
+            for (let i = 0; i < n && particles.length < 260; i++) {
+                particles.push({ x: x + (Math.random() - 0.5) * 0.6, y: y + (Math.random() - 0.5) * 0.6,
+                    vx: (Math.random() - 0.5) * 2 * sp, vy: -Math.random() * sp - up, life: (opt.life || 0.5) * (0.6 + Math.random() * 0.8),
+                    color, size: (opt.size || 2) * (0.6 + Math.random() * 0.8), g: opt.gravity === undefined ? 14 : opt.gravity });
+            }
+        }
+        function updateParticles(dt) {
+            for (const p of particles) { p.life -= dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+            if (particles.length) particles = particles.filter(p => p.life > 0);
+        }
+        function renderParticles() {
+            for (const p of particles) {
+                ctx.globalAlpha = Math.min(1, p.life * 3);
+                ctx.fillStyle = p.color;
+                ctx.fillRect((p.x - camera.x) * TILE_SIZE, (p.y - camera.y) * TILE_SIZE, p.size, p.size);
+            }
+            ctx.globalAlpha = 1;
+        }
+        function blockParticleColor(block, x, y) {
+            if (ORES[block]) return ORE_LOOK[block] ? ORE_LOOK[block].c : BLOCK_COLORS[block];
+            return block === BLOCK_TYPES.STONE ? BIOMES[biomeAtBlock(x, y)].rock : (BLOCK_COLORS[block] || '#888');
+        }
+
+        // ============ КРЕПЬ И НАСОС ============
+        const SUPPORT_PACK = { count: 5, price: 25 };
+        const PUMP_PRICE = 180, PUMP_MAX = 220;
+        let supports = 0, hasPump = false;
+        function placeSupport() {
+            if (supports <= 0) { showNotification(L('🪵 Крепи нет — продаётся в лавке')); return false; }
+            const x = Math.floor(player.x + PLAYER_W / 2), y = Math.floor(player.y + 0.5);
+            if (y < SURFACE_Y || getBlock(x, y) !== BLOCK_TYPES.AIR) { showNotification(L('🪵 Здесь крепь не поставить')); return false; }
+            setBlock(x, y, BLOCK_TYPES.SUPPORT);
+            supports--; sfx('place');
+            showNotification(L`🪵 Крепь стоит: потолок рядом не обвалится. Осталось: ${supports}`);
+            updateUI();
+            return true;
+        }
+        function buySupports() {
+            if (stats.money < SUPPORT_PACK.price) { showNotification(L`💰 Не хватает ${SUPPORT_PACK.price - stats.money} ¤`); return false; }
+            stats.money -= SUPPORT_PACK.price; sfx('buy');
+            supports = Math.min(MAX_GEAR, supports + SUPPORT_PACK.count);
+            showNotification(L`🪵 Куплена крепь: ${SUPPORT_PACK.count} шт.`);
+            updateUI(); renderShopList();
+            return true;
+        }
+        function buyPump() {
+            if (hasPump) return false;
+            if (stats.money < PUMP_PRICE) { showNotification(L`💰 Не хватает ${PUMP_PRICE - stats.money} ¤`); return false; }
+            stats.money -= PUMP_PRICE; sfx('buy');
+            hasPump = true;
+            showNotification(L('🚰 Куплен насос: встань у воды и нажми Z — озеро откачается'));
+            updateUI(); renderShopList();
+            return true;
+        }
+        // Откачать озеро: вся связанная вода рядом с шахтёром
+        function pumpWater() {
+            if (!hasPump) { showNotification(L('🚰 Насоса нет — продаётся в лавке')); return false; }
+            const px = Math.floor(player.x + PLAYER_W / 2), py = Math.floor(player.y + 0.5);
+            let start = null;
+            for (let r = 0; r <= 2 && !start; r++) for (let dy = -r; dy <= r && !start; dy++) for (let dx = -r; dx <= r; dx++)
+                if (getBlock(px + dx, py + dy) === BLOCK_TYPES.WATER) { start = [px + dx, py + dy]; break; }
+            if (!start) { showNotification(L('🚰 Рядом нет воды')); return false; }
+            const stack = [start]; let n = 0;
+            while (stack.length && n < PUMP_MAX) {
+                const [x, y] = stack.pop();
+                if (getBlock(x, y) !== BLOCK_TYPES.WATER) continue;
+                setBlock(x, y, BLOCK_TYPES.AIR); n++;
+                if (n % 6 === 0) spawnParticles(x + 0.5, y + 0.5, '#7fc4ff', 2, { speed: 1.5, life: 0.6 });
+                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+            sfx('splash');
+            showNotification(L`🚰 Откачано воды: ${n} клеток`);
+            unlock('pumper');
+            return true;
+        }
+
+        // ============ ДЕНЬ И НОЧЬ ============
+        // На поверхности сутки идут 12 минут: 9 — день, 3 — ночь. Ночью скупщик спит: руду
+        // принимает, но товары не продаёт. Первая продажа после рассвета — на 15 % дороже.
+        const DAY_LEN = 720, NIGHT_FROM = 540, MORNING_BONUS = 0.15;
+        const DAY_START = 60;               // новая игра начинается утром, небо уже голубое
+        let dayTime = DAY_START, morningBonus = false;
+        function isNight() { return settings.daynight !== false && dayTime >= NIGHT_FROM; }
+        function updateDay(dt) {
+            if (settings.daynight === false) return;
+            const was = isNight();
+            dayTime = (dayTime + dt) % DAY_LEN;
+            if (was && !isNight()) { morningBonus = true; if (player.y < SURFACE_Y + 3) showNotification(L('🌅 Рассвет: скупщик открыл лавку. Первая продажа — на 15 % дороже')); }
+            if (!was && isNight() && player.y < SURFACE_Y + 3) showNotification(L('🌙 Ночь: скупщик спит. Руду примет, а товары — утром'));
+        }
+        function skyColor() {
+            if (settings.daynight === false) return BLOCK_COLORS[BLOCK_TYPES.AIR];
+            const mix = (a, b, k) => { const A = hexRgb(a), B = hexRgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(',')})`; };
+            const DAY = '#87CEEB', DUSK = '#e8956a', NIGHT = '#0b1026';
+            const t = dayTime;
+            if (t < NIGHT_FROM - 40) return t < 30 ? mix(DUSK, DAY, t / 30) : DAY;      // утро → день
+            if (t < NIGHT_FROM) return mix(DAY, DUSK, (t - (NIGHT_FROM - 40)) / 40);    // закат
+            if (t < NIGHT_FROM + 20) return mix(DUSK, NIGHT, (t - NIGHT_FROM) / 20);
+            if (t > DAY_LEN - 20) return mix(NIGHT, DUSK, (t - (DAY_LEN - 20)) / 20);   // рассвет
+            return NIGHT;
+        }
+        function renderStars() {
+            if (!isNight() || camera.y > SURFACE_Y) return;
+            ctx.fillStyle = 'rgba(255, 255, 240, 0.85)';
+            for (let i = 0; i < 40; i++) {
+                const sx = (i * 97 % 120 - camera.x) * TILE_SIZE, sy = (i * 53 % (SURFACE_Y - 1) - camera.y) * TILE_SIZE + (i % 5) * 3;
+                if (sy < (SURFACE_Y - camera.y) * TILE_SIZE - 4) ctx.fillRect(sx, sy, i % 7 === 0 ? 2 : 1, i % 7 === 0 ? 2 : 1);
+            }
+        }
 
         // ============ ТЕКСТУРЫ БЛОКОВ ============
         // Камень, песок, глина, гравий, земля и руда — не ровные клетки, а с фактурой:
@@ -5412,6 +5594,7 @@
         const REMAP_ACTIONS = [
             ['KeyA', L('Влево')], ['KeyD', L('Вправо')], ['KeyW', L('Вверх / прыжок')], ['KeyS', L('Вниз')], ['Space', L('Копать / бить')],
             ['ShiftLeft', L('Бег')], ['KeyE', L('Лавка / вагонетка')], ['KeyQ', L('Лестница')], ['KeyR', L('Верёвка')], ['KeyT', L('Переправа')],
+            ['KeyX', L('Крепь')], ['KeyZ', L('Насос')],
             ['KeyC', L('Клеть')], ['KeyH', L('Лечиться')], ['KeyL', L('Зажечь лампу')], ['KeyB', L('Динамит')], ['KeyN', L('Карта')],
             ['KeyM', L('Радио')], ['KeyV', L('Видео')], ['KeyP', L('Персонаж')]
         ];
@@ -5719,6 +5902,8 @@
             if (d < R + 1) damage(DYNAMITE.hurt * (1 - d / (R + 1.5)), L('Динамит'));
             shakeTime = Math.max(shakeTime, 0.8);
             sfx('boom'); buzz('heavy');
+            spawnParticles(cx, cy, '#ffb02a', 14, { speed: 6, life: 0.4 });
+            spawnParticles(cx, cy, '#5a5a5a', 16, { speed: 2.5, up: 1, life: 1.1, gravity: -1, size: 3 });
             showNotification(got || lost ? L`💥 Бум! Руда: уцелело ${got}, разлетелось ${lost}` : L('💥 Бум!'));
             unlock('blaster');
             life.blasts++;
@@ -5812,7 +5997,7 @@
         // Каждый кадр: воздух, лампа в воде, «Ныряльщик»
         function updateWater(dt) {
             const wet = inWater();
-            if (wet && !wasInWater) sfx('splash');
+            if (wet && !wasInWater) { sfx('splash'); spawnParticles(player.x + PLAYER_W / 2, player.y + 0.3, '#9fd4ff', 10, { speed: 2.5, life: 0.5 }); }
             wasInWater = wet;
             if (headUnderwater()) {
                 underwaterFor += dt;
@@ -6004,7 +6189,7 @@
             let fell = 0;
             for (let tries = 0; tries < 120 && fell < 6; tries++) {
                 const x = px + Math.floor(Math.random() * 31) - 15, y = py + Math.floor(Math.random() * 15) - 9;
-                if (Math.abs(x - px) < 2) continue;                       // не прямо на голову
+                if (Math.abs(x - px) < 2 || isSupported(x, y)) continue;   // не прямо на голову и не над крепью
                 const b = getBlock(x, y);
                 if (![BLOCK_TYPES.STONE, BLOCK_TYPES.CLAY, BLOCK_TYPES.GRAVEL, BLOCK_TYPES.SAND].includes(b) || getBlock(x, y + 1) !== BLOCK_TYPES.AIR) continue;
                 world[y][x] = BLOCK_TYPES.AIR;
@@ -6409,7 +6594,12 @@
         }
 
         function sellBackpack() {
-            const earned = backpackValue();
+            let earned = backpackValue();
+            if (morningBonus && earned > 0 && !isNight()) {                 // утренняя цена
+                const bonus = Math.round(earned * MORNING_BONUS);
+                earned += bonus; morningBonus = false;
+                showNotification(L`🌅 Утренняя цена: +${bonus} ¤`);
+            }
             const count = backpackCount();
             if (count === 0) return 0;
             sfx('coins');
@@ -6494,6 +6684,10 @@
                 showNotification(L('🏚️ Подойди к лавке на поверхности'));
                 return;
             }
+            if (isNight()) {
+                showNotification(L`🌙 Скупщик спит. Лавка откроется через ${Math.ceil((DAY_LEN - dayTime) / 60)} мин — руду он примет и ночью`);
+                return;
+            }
             gameState.paused = true;
             renderShopList();
             document.getElementById('shopModal').classList.add('active');
@@ -6542,6 +6736,8 @@
             // снаряжение для подъёма: покупается сколько угодно раз
             const gear = [
                 { name: L`🧗 Лестницы ×${LADDER_PACK.count}`, info: L`ставятся клавишей Q · у тебя: ${ladders}`, price: LADDER_PACK.price, fn: 'buyLadders()' },
+                { name: L('🪵 Крепь ×') + SUPPORT_PACK.count, info: L`подпорка: потолок рядом не обвалится — клавиша X · у тебя: ${supports}`, price: SUPPORT_PACK.price, fn: 'buySupports()' },
+                ...(hasPump ? [] : [{ name: L('🚰 Насос'), info: L('откачивает озеро: встань у воды и нажми Z'), price: PUMP_PRICE, fn: 'buyPump()' }]),
                 { name: L('🧨 Динамит'), info: L`взрывает круг вокруг себя через 2.5 с — клавиша B · руда уцелеет наполовину · у тебя: ${dynamite}`, price: DYNAMITE.price, fn: 'buyDynamite()' },
                 { name: L('🔥 Спички ×') + MATCHES_PACK.count, info: L`зажечь погасшую открытую лампу в шахте — клавиша L · у тебя: ${matches}`, price: MATCHES_PACK.price, fn: 'buyMatches()' },
                 { name: L('🧗 Верёвка'), info: L`${ROPE_LENGTH} м, спускается клавишей R · у тебя: ${ropes}`, price: ROPE_PRICE, fn: 'buyRope()' },
@@ -6710,6 +6906,7 @@
         function canDig(block) {
             if (block === BLOCK_TYPES.AIR || block === BLOCK_TYPES.BEDROCK || block === BLOCK_TYPES.LAVA ||
                 block === BLOCK_TYPES.WATER || block === BLOCK_TYPES.RAIL || block === BLOCK_TYPES.CART) return false;
+            if (block === BLOCK_TYPES.SUPPORT) return true;
             if (isClimbable(block) || block === BLOCK_TYPES.WEB) return true;
             return pickaxeTier >= (MIN_TIER[block] || 0);
         }
@@ -6813,8 +7010,11 @@
             if (block === BLOCK_TYPES.BRIDGE) { takeBridge(targetX, targetY); updateUI(); return; }
             if (block === BLOCK_TYPES.WEB) { setBlock(targetX, targetY, BLOCK_TYPES.AIR); return; }
             if (block === BLOCK_TYPES.CHEST) { openChest(targetX, targetY); return; }
+            if (block === BLOCK_TYPES.SUPPORT) { setBlock(targetX, targetY, BLOCK_TYPES.AIR); supports = Math.min(MAX_GEAR, supports + 1); updateUI(); return; }
             addPoints('end', SOFT[block] !== undefined ? 0.5 : 1);
             sfx('break');
+            spawnParticles(targetX + 0.5, targetY + 0.5, blockParticleColor(block, targetX, targetY), 8);
+            if (ORES[block]) spawnParticles(targetX + 0.5, targetY + 0.5, '#fff6c2', 4, { speed: 4, life: 0.35, size: 1.5 });
             if (!run.debugUsed) life.dug++;
 
             if (block !== BLOCK_TYPES.AIR && block !== BLOCK_TYPES.BEDROCK) {
@@ -7020,6 +7220,9 @@
             'canary.calm':  [canarySvg(0), canarySvg(1)],
             'tile.ladder':  [ladderSvg()],
             'tile.rail':    [railSvg()],
+            'tile.support': [svgWrap(`<rect x="3" y="0" width="34" height="6" rx="1" fill="#8b5a2b" stroke="#3a2410" stroke-width="1"/>
+                <rect x="6" y="5" width="5" height="35" fill="#9a6532" stroke="#3a2410" stroke-width="1"/><rect x="29" y="5" width="5" height="35" fill="#9a6532" stroke="#3a2410" stroke-width="1"/>
+                <path d="M11 14 L20 6 M29 14 L20 6" stroke="#7a4a24" stroke-width="2.4"/><circle cx="8.5" cy="3" r="1" fill="#2a2a2a"/><circle cx="31.5" cy="3" r="1" fill="#2a2a2a"/>`)],
             'boss':         [bossSvg(0), bossSvg(1)],
             'tile.cart':    [cartSvg()],
             'tile.chest':   [chestSvg()],
@@ -7101,6 +7304,7 @@
             if (block === BLOCK_TYPES.RAIL) return drawSprite('tile.rail', 0, x, y, false);
             if (block === BLOCK_TYPES.CART) { drawSprite('tile.rail', 0, x, y, false); return drawSprite('tile.cart', 0, x, y, false); }
             if (block === BLOCK_TYPES.CHEST) return drawSprite('tile.chest', 0, x, y, false);
+            if (block === BLOCK_TYPES.SUPPORT) return drawSprite('tile.support', 0, x, y, false);
             if (block === BLOCK_TYPES.NUGGET) return drawSprite('tile.nugget', 0, x, y, false);
             return false;
         }
@@ -7182,6 +7386,7 @@
 
             // камера может стоять между клетками (у края мира) — сдвигаем сетку
             const camX = Math.floor(camera.x), camY = Math.floor(camera.y);
+            const sky = skyColor();
             ctx.save();
             if (ctx.translate) ctx.translate(-(camera.x - camX) * TILE_SIZE, -(camera.y - camY) * TILE_SIZE);
             for (let y = 0; y <= VIEWPORT_HEIGHT; y++) {
@@ -7192,13 +7397,13 @@
 
                     if (isSeeThrough(block)) {
                         // фон как у пустоты: небо или пещера
-                        ctx.fillStyle = worldY >= SURFACE_Y ? BIOMES[biomeAtBlock(worldX, worldY)].cave : BLOCK_COLORS[BLOCK_TYPES.AIR];
+                        ctx.fillStyle = worldY >= SURFACE_Y ? BIOMES[biomeAtBlock(worldX, worldY)].cave : sky;
                     } else if (block === BLOCK_TYPES.AIR && worldY >= SURFACE_Y) {
                         ctx.fillStyle = BIOMES[biomeAtBlock(worldX, worldY)].cave;
                     } else if (block === BLOCK_TYPES.STONE) {
                         ctx.fillStyle = BIOMES[biomeAtBlock(worldX, worldY)].rock;
                     } else {
-                        ctx.fillStyle = BLOCK_COLORS[block];
+                        ctx.fillStyle = block === BLOCK_TYPES.AIR ? sky : BLOCK_COLORS[block];
                     }
                     const tex = block !== BLOCK_TYPES.AIR && !isSeeThrough(block) ? blockTexture(block, worldX, worldY) : null;
                     if (tex) ctx.drawImage(tex, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -7273,12 +7478,14 @@
 
             ctx.restore();
 
+            renderStars();
             renderShop();
             renderDigProgress();
             renderCreatures();
             renderHazards();
             renderFuses();
             renderBoss();
+            renderParticles();
             renderPlayer();
             renderDarkness();
             ctx.restore();
@@ -7550,6 +7757,9 @@
             setCoinText(document.getElementById('goalStat'), (mode.daily ? '📅 ' : mode.hardcore ? '💀 ' : '') + goalProgress() + orderLine());
             const gearList = [lampTier ? L(LAMPS[lampTier].name).toLowerCase() + (lampLit ? '' : L(' (погасла)')) : null,
                               matches ? L`спички ${matches}` : null,
+                              supports ? L`крепь ${supports}` : null,
+                              hasPump ? L('насос') : null,
+                              dynamite ? L`динамит ${dynamite}` : null,
                               beltTier ? L(BELTS[beltTier].name).toLowerCase() : null, hasCanary ? L('канарейка') : null].filter(Boolean);
             document.getElementById('gear').textContent = gearList.length ? gearList.join(', ') : '—';
             const meds = [bandages ? L`бинты ${bandages}` : null, medkits ? L`аптечки ${medkits}` : null].filter(Boolean);
@@ -7654,6 +7864,7 @@
                 mode: Object.assign({}, mode),
                 order: order ? Object.assign({}, order) : null,
                 dynamite: dynamite,
+                supports: supports, pump: hasPump, dayTime: dayTime, morningBonus: morningBonus,
                 bossHome: bossHome,
                 seen: seenToRuns(),
                 run: Object.assign({}, run),
@@ -7795,6 +8006,8 @@
             cartRide = null; breath = BREATH_MAX; fuses = [];
             dynamite = Number.isInteger(saveData.dynamite) && saveData.dynamite >= 0 ? Math.min(10, saveData.dynamite) : 0;
             seenFromRuns(saveData.seen);
+            supports = gearCount(saveData.supports, 0); hasPump = saveData.pump === true; particles = [];
+            dayTime = Number.isFinite(saveData.dayTime) && saveData.dayTime >= 0 ? saveData.dayTime % DAY_LEN : DAY_START; morningBonus = saveData.morningBonus === true;
             const ms = saveData.mode || {};
             mode.daily = typeof ms.daily === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ms.daily) ? ms.daily : null;
             Object.assign(mode, { hardcore: ms.hardcore === true, variant: ms.variant === 'harsh' ? 'harsh' : 'oneLife',
@@ -8005,6 +8218,7 @@
                 order = null; lastOrderAt = 0; quakeIn = QUAKE_FIRST;
                 cartRide = null; mapUntil = 0; breath = BREATH_MAX;
                 dynamite = 0; fuses = []; seenFromRuns(null);
+                supports = 0; hasPump = false; particles = []; dayTime = DAY_START; morningBonus = false;
                 life.games++; saveLife();
                 setTimeout(openModePicker, 0);     // режим и цель — сразу после начала
             }
@@ -8216,7 +8430,7 @@
         // вид радио и видео по умолчанию простой: граммофон и телевизор игрок включает сам
         const settings = { notify: 'top-right', swap: false, radioSkin: 'plain', videoSkin: 'plain', showControls: false, zoom: 28, lang: null,
             tpSize: 'medium', tpOpacity: 'half', tpSwap: false, hudSize: 'normal',
-            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true, events: true, minimap: true, palette: 'normal', bigText: false, keymap: {}, textures: true };
+            vibrate: true, keepAwake: true, perf: 'auto', sound: true, ambience: true, volume: 0.6, tips: true, events: true, minimap: true, palette: 'normal', bigText: false, keymap: {}, textures: true, daynight: true };
         const RADIO_SKINS = ['plain', 'gramophone'];
         const VIDEO_SKINS = ['plain', 'tv'];
 
@@ -8242,6 +8456,7 @@
                 if (st.palette === 'cb' || st.palette === 'normal') settings.palette = st.palette;
                 if (typeof st.bigText === 'boolean') settings.bigText = st.bigText;
                 if (typeof st.textures === 'boolean') settings.textures = st.textures;
+                if (typeof st.daynight === 'boolean') settings.daynight = st.daynight;
                 if (st.keymap && typeof st.keymap === 'object') {
                     settings.keymap = {};
                     for (const [k, v] of Object.entries(st.keymap)) if (REMAP_ACTIONS.some(a => a[0] === k) && typeof v === 'string' && /^[A-Za-z0-9]+$/.test(v)) settings.keymap[k] = v;
@@ -8305,6 +8520,7 @@
             const pal = document.getElementById('optPalette'); if (pal) pal.checked = settings.palette === 'cb';
             const bt = document.getElementById('optBigText'); if (bt) bt.checked = settings.bigText;
             const tx = document.getElementById('optTextures'); if (tx) tx.checked = settings.textures;
+            const dn = document.getElementById('optDayNight'); if (dn) dn.checked = settings.daynight;
             if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText);
             renderKeymap();
             const vo = document.getElementById('optVolume'); if (vo) vo.value = Math.round(settings.volume * 100);
@@ -8470,6 +8686,7 @@
             else if (what === 'minimap') settings.minimap = !!value;
             else if (what === 'palette') settings.palette = value ? 'cb' : 'normal';
             else if (what === 'textures') settings.textures = !!value;
+            else if (what === 'daynight') settings.daynight = !!value;
             else if (what === 'bigText') { settings.bigText = !!value; if (document.body && document.body.classList) document.body.classList.toggle('big-text', settings.bigText); }
             else if (what === 'volume') settings.volume = Math.max(0, Math.min(1, Number(value) / 100));
             else return false;
@@ -8712,6 +8929,15 @@
             settings.videoSkin = skin; saveSettings(); applySettings(); return true;
         }
 
+        // «Журнал»: достижения, рекорды, статистика, дневник — прячутся под одну кнопку
+        function toggleMore() {
+            const on = !document.body.classList.contains('show-more');
+            document.body.classList.toggle('show-more', on);
+            const b = document.getElementById('moreToggle');
+            if (b && b.classList) b.classList.toggle('on', on);
+            return on;
+        }
+
         // Кнопка «Управление»: показать или скрыть подсказки по клавишам (запоминается)
         function toggleControls(on) {
             settings.showControls = on === undefined ? !settings.showControls : !!on;
@@ -8833,6 +9059,8 @@
                 markSeen();
                 updateDynamite(dt);
                 updateBoss(dt);
+                updateParticles(dt);
+                updateDay(dt);
                 lifeTick(dt);
                 updateBiome(currentTime);
                 updateCamera();
@@ -9327,7 +9555,7 @@
         // Обработка клавиатуры (сенсорные кнопки зовут те же функции)
         // Клавиши-действия срабатывают один раз на нажатие: автоповтор при удержании
         // не должен, например, тратить бинты один за другим
-        const ONE_SHOT_KEYS = new Set(['KeyE', 'KeyQ', 'KeyR', 'KeyT', 'KeyL', 'KeyB', 'KeyN', 'KeyC', 'KeyH', 'KeyM', 'KeyV', 'KeyP', 'Backquote', 'KeyG', 'Escape']);
+        const ONE_SHOT_KEYS = new Set(['KeyE', 'KeyQ', 'KeyR', 'KeyT', 'KeyL', 'KeyB', 'KeyX', 'KeyZ', 'KeyN', 'KeyC', 'KeyH', 'KeyM', 'KeyV', 'KeyP', 'Backquote', 'KeyG', 'Escape']);
 
         function onKeyDown(e) {
             sfxUnlock();                       // звук браузеры разрешают только после нажатия
@@ -9358,6 +9586,8 @@
             if (e.code === 'KeyT' && !gameState.paused) deployBridge();
             if (e.code === 'KeyL' && !gameState.paused) lightLamp();
             if (e.code === 'KeyB' && !gameState.paused) lightDynamite();
+            if (e.code === 'KeyX' && !gameState.paused) placeSupport();
+            if (e.code === 'KeyZ' && !gameState.paused) pumpWater();
             if (e.code === 'KeyN') {
                 const mm = document.getElementById('mapModal');
                 if (mm && mm.classList.contains('active')) closeBigMap(); else if (!gameState.paused) openBigMap();
