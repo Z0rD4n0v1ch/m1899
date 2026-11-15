@@ -63,6 +63,10 @@ You start at the shop with a rusty pickaxe, ten ladders and an empty canvas sack
 
 ![An old drift and a lake](docs/screenshots/en/mine.png)
 
+![Night on the surface and supports in a tunnel](docs/screenshots/en/night.png)
+
+![The Journal button](docs/screenshots/en/journal.png)
+
 ## Telegram
 
 The game can be opened from a Telegram bot as a mini app, without a server of your own. See [TELEGRAM.md](TELEGRAM.md) (in Russian, with English texts for the bot).
